@@ -97,6 +97,7 @@ class Rabbit {
         this.canvas.height = this.canvas.clientHeight;
 
         this.camera = { x: 0, y: 0 };
+        console.log("rabbit 初始化完成")
     }
     /**
      * 输出图片错误
@@ -227,7 +228,7 @@ class Rabbit {
     run() {
         const dtime: number = 1000 / this.fps;
         this.time = Date.now();
-        setInterval(() => { this.update }, dtime);
+        setInterval(() => { this.update() }, dtime);
     }
 
     /**
@@ -507,6 +508,7 @@ class RabText extends Graphic {
     }
 
     draw() {
+        // console.log("RabText draw 调用")
         this.w = Rabbit.Instance.context.measureText(this.text).width;
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.font = this.size + "px " + this.font;
@@ -515,6 +517,7 @@ class RabText extends Graphic {
     }
 
     update(time) {
+        // console.log("RabText update 调用")
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     }
 }
@@ -925,8 +928,6 @@ class Tilemap extends Graphic {
             this.canvas.context.drawImage(this.image, sourceX, sourceY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH);
         }
     }
-
-
 
     update(dtime) {
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));

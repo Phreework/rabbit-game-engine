@@ -83,6 +83,7 @@ class Rabbit {
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
         this.camera = { x: 0, y: 0 };
+        console.log("rabbit 初始化完成");
     }
     /**
      * 输出图片错误
@@ -205,7 +206,7 @@ class Rabbit {
     run() {
         const dtime = 1000 / this.fps;
         this.time = Date.now();
-        setInterval(() => { this.update; }, dtime);
+        setInterval(() => { this.update(); }, dtime);
     }
     /**
      * 设置背景图片
@@ -431,6 +432,7 @@ class RabText extends Graphic {
         console.log("context", Rabbit.Instance.context);
     }
     draw() {
+        // console.log("RabText draw 调用")
         this.w = Rabbit.Instance.context.measureText(this.text).width;
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.font = this.size + "px " + this.font;
@@ -438,6 +440,7 @@ class RabText extends Graphic {
         Rabbit.Instance.context.fillText(this.text, this.x, this.y);
     }
     update(time) {
+        // console.log("RabText update 调用")
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     }
 }
@@ -801,4 +804,4 @@ class Canvas extends Graphic {
     }
     ;
 }
-export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType };
+// export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType };

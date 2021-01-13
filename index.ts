@@ -5,19 +5,22 @@ var url = require('url');
 var fs = require('fs');
 var path = require('path');
 var cp = require('child_process');
+
 //创建服务
 var httpServer = http.createServer(processRequest);
 // 这是端口号
 var port = 80;
+
 //指定一个监听的接口
-httpServer.listen(port, function () {
+httpServer.listen(port, function() {
     console.log(`app is running at port:${port}`);
     console.log(`url: http://localhost:${port}`);
     cp.exec(`explorer http://localhost:${port}`, function () {
     });
 });
+
 //响应请求的函数
-function processRequest(request, response) {
+function processRequest (request, response) {
     //mime类型
     var mime = {
         "css": "text/css",
@@ -39,12 +42,15 @@ function processRequest(request, response) {
         "wmv": "video/x-ms-wmv",
         "xml": "text/xml"
     };
+    
     //request里面切出标识符字符串
     var requestUrl = request.url;
     //url模块的parse方法 接受一个字符串，返回一个url对象,切出来路径
     var pathName = url.parse(requestUrl).pathname;
+
     //对路径解码，防止中文乱码
-    var pathName = decodeURI(pathName);
+    var pathName:any = decodeURI(pathName);
+
     //解决301重定向问题，如果pathname没以/结尾，并且没有扩展名
     if (!pathName.endsWith('/') && path.extname(pathName) === '') {
         pathName += '/';
@@ -55,6 +61,7 @@ function processRequest(request, response) {
         //response.end方法用来回应完成后关闭本次对话，也可以写入HTTP回应的具体内容。
         response.end();
     }
+
     //获取资源文件的绝对路径
     var filePath = path.resolve(__dirname + pathName);
     console.log(filePath);
@@ -63,8 +70,10 @@ function processRequest(request, response) {
     //对于没有后缀名的文件，我们一律认为是unknown。
     var ext = path.extname(pathName);
     ext = ext ? ext.slice(1) : 'unknown';
+
     //未知的类型一律用"text/plain"类型
     var contentType = mime[ext] || "text/plain";
+
     fs.stat(filePath, (err, stats) => {
         if (err) {
             response.writeHead(404, { "content-type": "text/html" });
@@ -81,21 +90,19 @@ function processRequest(request, response) {
             fs.readdir(filePath, (err, files) => {
                 if (err) {
                     console.log("读取路径失败！");
-                }
-                else {
+                } else {
                     //做成一个链接表，方便用户访问
                     var flag = false;
                     for (var file of files) {
                         //如果在目录下找到index.html，直接读取这个文件
                         if (file === "index.html") {
-                            readFile(filePath + (filePath[filePath.length - 1] == '/' ? '' : '/') + 'index.html', "text/html");
+                            readFile(filePath + (filePath[filePath.length-1]=='/' ? '' : '/') + 'index.html', "text/html");
                             flag = true;
                             break;
-                        }
-                        ;
+                        };
                         html += `<li><a href='${file}'>${file}</a></li>`;
                     }
-                    if (!flag) {
+                    if(!flag) {
                         html += '</ul></body>';
                         response.writeHead(200, { "content-type": "text/html" });
                         response.end(html);
@@ -103,13 +110,14 @@ function processRequest(request, response) {
                 }
             });
         }
+
         //读取文件的函数
-        function readFile(filePath, contentType) {
+        function readFile(filePath, contentType){
             response.writeHead(200, { "content-type": contentType });
             //建立流对象，读文件
             var stream = fs.createReadStream(filePath);
             //错误处理
-            stream.on('error', function () {
+            stream.on('error', function() {
                 response.writeHead(500, { "content-type": contentType });
                 response.end("<h1>500 Server Error</h1>");
             });

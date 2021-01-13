@@ -1,4 +1,4 @@
-import { Entity, Circle, Canvas, Sfx, Rabbit } from "./Core";
+// import { Entity, Circle, Canvas, Sfx, Rabbit } from "./Core";
 class Light extends Entity {
     constructor(gx, gy, radius, board) {
         super();
