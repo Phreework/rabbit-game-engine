@@ -12,8 +12,8 @@
 	</canvas>
 
 	<p>Made with <a href="https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p>
-	<script src="../build/public/ts/Core.js"></script>
 	<script type="module">
+		import {Rabbit,Entity,RabText,TestComponent} from '../build/public/ts/Core.js'
 		console.log("进来了")
 		function TestText(x, y, text) {
 			return new Entity(x, y, new RabText(x, y, text));
@@ -22,14 +22,20 @@
 		function main() {
 			const rabbit = new Rabbit();
 			rabbit.init('rabbit-canvas');
-			const node = TestText(100, 0, "Hello, world!");
-			node.mouseDown = () => {
+			const entity = TestText(100, 0, "Hello, world!");
+			entity.mouseDown = () => {
 				console.log("mousedown事件执行");
 			}
-			rabbit.world.add(node);
+			const test1 = entity.addComponent(TestComponent);
+			console.log("test1",test1);
+			const test2 = entity.addComponent("TestComponent");
+			console.log("test2",test2); 
+			rabbit.world.add(entity);
+
 			rabbit.run();
 		}
 		main();
+
 	</script>
 </body>
 

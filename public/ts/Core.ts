@@ -1,3 +1,24 @@
+/** 
+ * --------------------------------------------------------
+ * ###en
+ * The core script of Rabbit engine
+ * main author: PhreeSoda
+ * GitHub: https://github.com/Phreework/rabbit-game-engine
+ * description: Rabbit engine is a quick and fast H5 game engine whitch have a Entity-Component-Pipeline design.
+ * ###zh
+ * Rabbit 引擎的核心代码 
+ * 主要作者：PhreeSoda
+ * 代码仓库：https://github.com/Phreework/rabbit-game-engine
+ * 描述：rabbit 引擎是一个极易上手并且性能强劲的H5游戏引擎，具有 实体-组件-管线 的特色开发架构。
+ * --------------------------------------------------------
+*/
+
+/**
+ * ###en
+ * 
+ * ###zh
+ * 键盘按键枚举（需补齐其他不常用键）
+ */
 enum RabKeyType {
     A = 65,
     B = 66,
@@ -43,7 +64,14 @@ enum RabKeyType {
     DOWN = 40,
 
     SPACE = 32
-};
+}
+
+/**
+ * ###en
+ * 
+ * ###zh
+ * 游戏实例
+ */
 class Rabbit {
     static Instance: Rabbit = null;
     canvas: HTMLCanvasElement = null;
@@ -260,7 +288,6 @@ class Rabbit {
     }
 }
 
-
 class RabObject {
     clone() {
         let f = function () { };
@@ -278,15 +305,61 @@ class RabObject {
     }
 }
 
+class Component extends RabObject {
+    entity: Entity;
+    enabled: boolean;
+
+    onLoad() {
+
+    }
+    start() {
+
+    }
+    lateUpdate() {
+
+    }
+    onEnable() {
+
+    }
+    onDestroy() {
+
+    }
+    update() {
+
+    }
+
+    addComponent(className: string): Component;
+    addComponent<T extends Component>(com: { new(): T }): T;
+    addComponent<T extends Component>(com: string | { new(): T }): any {
+        if (typeof com == "string")
+            return this.entity.addComponent(com);
+        else
+            return this.entity.addComponent(com);
+    }
+
+    getComponent(className: string): Component;
+    getComponent<T extends Component>(type: { prototype: T }): T;
+    getComponent<T extends Component>(type: string | { prototype: T }): any {
+        if (typeof type == "string")
+            return this.entity.getComponent(type);
+        else
+            return this.entity.getComponent(type);
+    }
+
+}
+
+class TestComponent extends Component {
+    className: string = "TestComponent";
+}
 class Entity extends RabObject {
     x: number;
     y: number;
     graphic: Graphic;
     type: string;
     world: World;
-    name:string;
+    name: string;
     id: number;
-
+    components: Component[]=[];
 
 
     constructor(x?, y?, graphic?: Graphic) {
@@ -305,7 +378,7 @@ class Entity extends RabObject {
     mouseDown() { };
 
     removed() { };
-    
+
     added() {
 
     }
@@ -324,12 +397,44 @@ class Entity extends RabObject {
     update(dtime) {
 
     }
+
+    addComponent(className: string): Component;
+    addComponent<T extends Component>(com: { new(): T }): T;
+    addComponent<T extends Component>(com: string | { new(): T }): any {
+        let newCom: Component = null;
+        if (typeof com == "string") {
+            for (let c in rabbitClass) {
+                if (c.constructor.name == com) {
+                    newCom = window[com]();
+                    this.components.push(newCom);
+                }
+            }
+        } else {
+            newCom = new com();
+            this.components.push(newCom);
+        }
+        return newCom as T;
+    }
+
+    getComponent(className: string): Component;
+    getComponent<T extends Component>(type: { prototype: T }): T;
+    getComponent<T extends Component>(type: string | { prototype: T }): any {
+        // console.log("test",new TestPro().__proto__.constructor.name);
+        // console.log("test",TestPro.prototype.constructor.name);
+        for (let i = 0; i < this.components.length; i++) {
+            const com = this.components[i];
+            if ((com as any).__proto__.constructor.name == (type as any).prototype.constructor.name) {
+                return (com as T);
+            }
+        }
+        return null;
+    }
 }
 
 class Sfx extends RabObject {
 
     soundUrl: string;
-    audio:HTMLAudioElement;
+    audio: HTMLAudioElement;
     constructor(soundurl) {
         super();
         this.soundUrl = soundurl;
@@ -973,5 +1078,5 @@ class Canvas extends Graphic {
         return c;
     };
 }
-
-export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType,RabImage };
+const rabbitClass = { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
