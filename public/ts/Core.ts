@@ -54,7 +54,7 @@ class Rabbit {
      */
     static images: Map<string, HTMLImageElement> = new Map();
     audio: any = {};
-    world: any = null;
+    world: World = null;
     mouse: any = { x: undefined, y: undefined, pressed: false };
     offset: any[] = [0, 0];
     fps: number = 60;
@@ -284,15 +284,10 @@ class Entity extends RabObject {
     graphic: Graphic;
     type: string;
     world: World;
+    name:string;
     id: number;
 
-    keyDown: (key) => void;
 
-    keyUp: (key) => void;
-
-    mouseDown: () => void;
-
-    removed: () => void;
 
     constructor(x?, y?, graphic?: Graphic) {
         super();
@@ -303,6 +298,14 @@ class Entity extends RabObject {
         this.world = null;
     }
 
+    keyDown(key) { };
+
+    keyUp(key) { };
+
+    mouseDown() { };
+
+    removed() { };
+    
     added() {
 
     }
@@ -324,16 +327,17 @@ class Entity extends RabObject {
 }
 
 class Sfx extends RabObject {
-    sound: any;
-    constructor(sound) {
+
+    soundUrl: string;
+    audio:HTMLAudioElement;
+    constructor(soundurl) {
         super();
-        this.sound = sound;
+        this.soundUrl = soundurl;
     }
 
     play() {
-        this.sound = Rabbit.loadAudio(this.sound);
-        this.sound.play();
-
+        this.audio = Rabbit.loadAudio(this.soundUrl);
+        this.audio.play();
     }
 }
 
@@ -384,28 +388,19 @@ class World extends RabObject {
 
     keyDown(key) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e].keyDown != undefined) {
-                this.entities[e].keyDown(key);
-                return;
-            }
+            this.entities[e].keyDown(key);
         }
     }
 
     keyUp(key) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e].keyUp != undefined) {
-                this.entities[e].keyUp(key);
-                return;
-            }
+            this.entities[e].keyUp(key);
         }
     }
 
     mouseDown() {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e].mouseDown != undefined) {
-                this.entities[e].mouseDown();
-                return;
-            }
+            this.entities[e].mouseDown();
         }
     }
 
@@ -979,4 +974,4 @@ class Canvas extends Graphic {
     };
 }
 
-export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType };
+export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType,RabImage };

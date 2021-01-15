@@ -265,6 +265,14 @@ class Entity extends RabObject {
         this.type = "entity";
         this.world = null;
     }
+    keyDown(key) { }
+    ;
+    keyUp(key) { }
+    ;
+    mouseDown() { }
+    ;
+    removed() { }
+    ;
     added() {
     }
     collide(rect) {
@@ -278,13 +286,13 @@ class Entity extends RabObject {
     }
 }
 class Sfx extends RabObject {
-    constructor(sound) {
+    constructor(soundurl) {
         super();
-        this.sound = sound;
+        this.soundUrl = soundurl;
     }
     play() {
-        this.sound = Rabbit.loadAudio(this.sound);
-        this.sound.play();
+        this.audio = Rabbit.loadAudio(this.soundUrl);
+        this.audio.play();
     }
 }
 class World extends RabObject {
@@ -328,26 +336,17 @@ class World extends RabObject {
     }
     keyDown(key) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e].keyDown != undefined) {
-                this.entities[e].keyDown(key);
-                return;
-            }
+            this.entities[e].keyDown(key);
         }
     }
     keyUp(key) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e].keyUp != undefined) {
-                this.entities[e].keyUp(key);
-                return;
-            }
+            this.entities[e].keyUp(key);
         }
     }
     mouseDown() {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e].mouseDown != undefined) {
-                this.entities[e].mouseDown();
-                return;
-            }
+            this.entities[e].mouseDown();
         }
     }
     remove(e) {
@@ -804,4 +803,4 @@ class Canvas extends Graphic {
     }
     ;
 }
-// export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType };
+// export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage };

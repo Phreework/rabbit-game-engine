@@ -1,4 +1,4 @@
-"use strict";
+// "use strict";
 //加载所需要的模块
 var http = require('http');
 var url = require('url');

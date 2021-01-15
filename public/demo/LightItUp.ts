@@ -1,19 +1,19 @@
-import { Entity, Circle, Canvas, Sfx, Rabbit } from "./Core"
+import { Entity, Circle, Canvas, Sfx, Rabbit } from "../ts/Core"
 class Light extends Entity {
     gx: any;
     gy: any;
     radius: any;
     lit: boolean;
     board: any;
-    circle: any;
+    circle: Circle;
     dark: Canvas;
     light: Canvas;
     constructor(gx, gy, radius, board) {
         super();
         this.gx = gx;
         this.gy = gy;
-        var x = gx * (radius * 2 + 1);
-        var y = gy * (radius * 2 + 1);
+        let x = gx * (radius * 2 + 1);
+        let y = gy * (radius * 2 + 1);
         this.radius = radius;
         this.lit = true;
         this.board = board;
@@ -30,12 +30,14 @@ class Light extends Entity {
         this.light.context.fill();
 
         this.graphic = this.dark;
-        this.mouseDown = () => {
-            if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y]))
-                this.board.light(this.gx, this.gy);
-        }
-    }
 
+    }
+    mouseDown(){
+        super.mouseDown();
+        console.log("点击棋子");
+        if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y]))
+            this.board.light(this.gx, this.gy);
+    }
     flip() {
         this.lit = !this.lit;
     }
@@ -49,18 +51,18 @@ class Light extends Entity {
 }
 
 class Board extends Entity {
-    lights: any[];
+    lights: Light[];
     constructor() {
         super();
         this.lights = [];
-        for (var y = 0; y < 5; ++y) {
-            for (var x = 0; x < 5; ++x) {
-                var l = (new Light(x, y, 32, this));
+        for (let y = 0; y < 5; ++y) {
+            for (let x = 0; x < 5; ++x) {
+                const l: Light = new Light(x, y, 32, this);
                 this.lights.push(l);
                 Rabbit.Instance.world.add(l);
             }
         }
-        for (var i = 0; i < 8; ++i) {
+        for (let i = 0; i < 8; ++i) {
             this.light(Math.floor(Math.random() * 5), Math.floor(Math.random() * 5));
         }
     }
@@ -77,10 +79,10 @@ class Board extends Entity {
         this.checkWon();
     }
     checkWon() {
-        for (var l in this.lights) {
-            if (!this.lights[l].lit)
-                return;
-        };
+        for (let i = 0; i < this.lights.length; i++) {
+            const item = this.lights[i];
+            if (!item.lit) return;
+        }
         new Sfx("audio/bell.ogg").play();
         alert("Victory!");
     }

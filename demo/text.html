@@ -1,31 +1,36 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>rabbit demo - Text drawing</title>
 
-		<script>
-			function TestText(x, y, text) {
-				rabbit.Entity.apply(this) ;
+<head>
+	<meta charset="utf-8">
+	<title>rabbit demo - Text drawing</title>
+</head>
 
-				this.x = x ;
-				this.y = y ;
+<body>
+	<canvas id="rabbit-canvas" style="width: 512px; height: 512px; background: black">
+		<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+	</canvas>
 
-				this.graphic = new rabbit.Text(x, y, text) ;
+	<p>Made with <a href="https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p>
+	<script src="../build/public/ts/Core.js"></script>
+	<script type="module">
+		console.log("进来了")
+		function TestText(x, y, text) {
+			return new Entity(x, y, new RabText(x, y, text));
+		}
+
+		function main() {
+			const rabbit = new Rabbit();
+			rabbit.init('rabbit-canvas');
+			const node = TestText(100, 0, "Hello, world!");
+			node.mouseDown = () => {
+				console.log("mousedown事件执行");
 			}
+			rabbit.world.add(node);
+			rabbit.run();
+		}
+		main();
+	</script>
+</body>
 
-			function main() {
-				rabbit.init('rabbit-canvas') ;
-				rabbit.world.add(new TestText(0, 0, "Hello, world!")) ;
-				rabbit.run() ;
-			}
-		</script>
-	</head>
-	<body onload = "main();">
-		<canvas id = "rabbit-canvas" style = "width: 512px; height: 512px; background: black">
-			<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
-		</canvas>
-
-		<p>Made with <a href = "https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p>
-		<script type = "text/javascript" src = "../rabbit.js"></script>
-	</body>
 </html>
