@@ -5,6 +5,12 @@ const TILE_H = 32;
 class IsoTilemap extends Graphic {
   constructor(x, y, gw, gh, tw, th, image) {
     super();
+    this.gridW = void 0;
+    this.gridH = void 0;
+    this.tileW = void 0;
+    this.tileH = void 0;
+    this.image = void 0;
+    this.tiles = void 0;
     this.x = x;
     this.y = y;
     this.gridW = gw;
@@ -50,6 +56,7 @@ class IsoTilemap extends Graphic {
 class Terrain extends Entity {
   constructor() {
     super();
+    this.graphic = void 0;
     let imageUrl = 'graphics/isometric/tiles.png';
     this.graphic = new IsoTilemap(0, 0, 12, 12, TILE_W, TILE_H, imageUrl);
   }
@@ -63,6 +70,8 @@ class Terrain extends Entity {
 class Town extends Entity {
   constructor(gx, gy) {
     super();
+    this.gridX = void 0;
+    this.gridY = void 0;
     this.gridX = gx;
     this.gridY = gy;
     this.x = (gx - gy) * TILE_W / 2;
@@ -75,6 +84,10 @@ class Town extends Entity {
 class Unit extends Entity {
   constructor(gx, gy, banner) {
     super();
+    this.gridX = void 0;
+    this.gridY = void 0;
+    this.image = void 0;
+    this.banner = void 0;
     this.gridX = gx;
     this.gridY = gy;
     this.x = (gx - gy) * TILE_W / 2 + 16;
@@ -89,6 +102,7 @@ class Unit extends Entity {
 class IsoWorld extends World {
   constructor() {
     super();
+    this.terrain = void 0;
     this.terrain = new Terrain();
     this.add(this.terrain);
     Rabbit.Instance.camera = {
@@ -102,6 +116,9 @@ class IsoWorld extends World {
 class City extends Entity {
   constructor(gx, gy) {
     super();
+    this.gridX = void 0;
+    this.gridY = void 0;
+    this.image = void 0;
     this.gridX = gx;
     this.gridY = gy;
     let width = 128;

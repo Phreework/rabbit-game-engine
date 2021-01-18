@@ -13,6 +13,10 @@
  * --------------------------------------------------------
 */
 
+import { rClass } from "../ts/Decorator.js";
+
+const rabbitClass = {};
+
 /**
  * ###en
  * 
@@ -72,6 +76,7 @@ enum RabKeyType {
  * ###zh
  * 游戏实例
  */
+@rClass
 class Rabbit {
     static Instance: Rabbit = null;
     canvas: HTMLCanvasElement = null;
@@ -287,7 +292,7 @@ class Rabbit {
         }
     }
 }
-
+@rClass
 class RabObject {
     clone() {
         let f = function () { };
@@ -304,7 +309,7 @@ class RabObject {
         return o;
     }
 }
-
+@rClass
 class Component extends RabObject {
     entity: Entity;
     enabled: boolean;
@@ -347,10 +352,11 @@ class Component extends RabObject {
     }
 
 }
-
+@rClass
 class TestComponent extends Component {
     className: string = "TestComponent";
 }
+@rClass
 class Entity extends RabObject {
     x: number;
     y: number;
@@ -359,7 +365,7 @@ class Entity extends RabObject {
     world: World;
     name: string;
     id: number;
-    components: Component[]=[];
+    components: Component[] = [];
 
 
     constructor(x?, y?, graphic?: Graphic) {
@@ -403,15 +409,23 @@ class Entity extends RabObject {
     addComponent<T extends Component>(com: string | { new(): T }): any {
         let newCom: Component = null;
         if (typeof com == "string") {
-            for (let c in rabbitClass) {
-                if (c.constructor.name == com) {
-                    newCom = window[com]();
+            try {
+                if (rabbitClass[com]) {
+                    newCom = new rabbitClass[com].prototype.constructor();
                     this.components.push(newCom);
+                } else {
+                    console.log("不存在此component", com);
                 }
+            } catch (e) {
+                console.error("通过string字符串addComponent出错", e);
             }
         } else {
-            newCom = new com();
-            this.components.push(newCom);
+            try {
+                newCom = new com();
+                this.components.push(newCom);
+            } catch (e) {
+                console.error("通过传入类addComponent错误，可能原因为类实现有误");
+            }
         }
         return newCom as T;
     }
@@ -421,16 +435,25 @@ class Entity extends RabObject {
     getComponent<T extends Component>(type: string | { prototype: T }): any {
         // console.log("test",new TestPro().__proto__.constructor.name);
         // console.log("test",TestPro.prototype.constructor.name);
-        for (let i = 0; i < this.components.length; i++) {
-            const com = this.components[i];
-            if ((com as any).__proto__.constructor.name == (type as any).prototype.constructor.name) {
-                return (com as T);
+        if (typeof type == "string") {
+            for (let i = 0; i < this.components.length; i++) {
+                const com = this.components[i];
+                if ((com as any).__proto__.constructor.name == type) {
+                    return (com as T);
+                }
+            }
+        } else {
+            for (let i = 0; i < this.components.length; i++) {
+                const com = this.components[i];
+                if ((com as any).__proto__.constructor.name == (type as any).prototype.constructor.name) {
+                    return (com as T);
+                }
             }
         }
         return null;
     }
 }
-
+@rClass
 class Sfx extends RabObject {
 
     soundUrl: string;
@@ -445,7 +468,7 @@ class Sfx extends RabObject {
         this.audio.play();
     }
 }
-
+@rClass
 class World extends RabObject {
     constructor() {
         super();
@@ -546,7 +569,7 @@ class World extends RabObject {
         return collisions;
     }
 }
-
+@rClass
 class Collision {
     other: any;
     rect: any;
@@ -555,7 +578,7 @@ class Collision {
         this.rect = rect;
     }
 }
-
+@rClass
 class Graphic {
     x: number = 0;
     y: number = 0;
@@ -570,7 +593,7 @@ class Graphic {
 
     }
 }
-
+@rClass
 class RabText extends Graphic {
     text: string;
     font: string;
@@ -621,7 +644,7 @@ class RabText extends Graphic {
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     }
 }
-
+@rClass
 class Rect extends RabObject {
     x: number;
     y: number;
@@ -681,7 +704,7 @@ class Rect extends RabObject {
         return this.y;
     }
 }
-
+@rClass
 class Circle extends RabObject {
     x: number;
     y: number;
@@ -713,7 +736,7 @@ class Circle extends RabObject {
         this.y = pos[1];
     }
 };
-
+@rClass
 class GraphicList extends Graphic {
     graphics: Graphic[];
     constructor(graphics) {
@@ -774,6 +797,7 @@ class GraphicList extends Graphic {
         }
     }
 }
+@rClass
 class RabImage extends Graphic {
     _x: number;
     _y: number;
@@ -828,7 +852,7 @@ class RabImage extends Graphic {
         this.h = this.image.height;
     }
 }
-
+@rClass
 class Sprite extends Graphic {
     private _x: any;
     private _y: any;
@@ -956,7 +980,7 @@ class Sprite extends Graphic {
         }
     }
 }
-
+@rClass
 class Tilemap extends Graphic {
     gridW: number;
     gridH: number;
@@ -1036,6 +1060,7 @@ class Tilemap extends Graphic {
         }
     }
 }
+@rClass
 class Canvas extends Graphic {
     alpha: number;
     canvas: HTMLCanvasElement;
@@ -1078,5 +1103,5 @@ class Canvas extends Graphic {
         return c;
     };
 }
-const rabbitClass = { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
-export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+// const rabbitClass = {  Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

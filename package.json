@@ -4,7 +4,8 @@
   "description": "a easy and lite game engine",
   "main": "index.js",
   "scripts": {
-    "test": "rabbit test"
+    "test": "rabbit test",
+    "build": "npx babel public --out-dir build/public --presets=@babel/preset-typescript --extensions '.ts'"
   },
   "repository": {
     "type": "git",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@babel/cli": "^7.12.10",
     "@babel/core": "^7.12.10",
+    "@babel/plugin-proposal-decorators": "^7.12.12",
     "@babel/preset-env": "^7.12.11",
     "@babel/preset-typescript": "^7.12.7",
     "tern": "^0.24.3"

@@ -3,6 +3,14 @@ import { Entity, Circle, Canvas, Sfx, Rabbit } from "../ts/Core";
 class Light extends Entity {
   constructor(gx, gy, radius, board) {
     super();
+    this.gx = void 0;
+    this.gy = void 0;
+    this.radius = void 0;
+    this.lit = void 0;
+    this.board = void 0;
+    this.circle = void 0;
+    this.dark = void 0;
+    this.light = void 0;
     this.gx = gx;
     this.gy = gy;
     let x = gx * (radius * 2 + 1);
@@ -43,6 +51,7 @@ class Light extends Entity {
 class Board extends Entity {
   constructor() {
     super();
+    this.lights = void 0;
     this.lights = [];
 
     for (let y = 0; y < 5; ++y) {

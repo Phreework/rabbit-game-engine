@@ -3,6 +3,9 @@ import { Entity, Rabbit, RabImage, Rect, Sfx } from "../ts/Core";
 class EffectButton extends Entity {
   constructor(x, y, image, sound) {
     super();
+    this.image = void 0;
+    this.sound = void 0;
+    this.rect = void 0;
     this.x = x;
     this.y = y;
     this.image = new RabImage(x, y, image);

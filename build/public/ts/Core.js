@@ -1,3 +1,5 @@
+var _class, _class2, _temp, _class3, _class4, _temp2, _class6, _temp3, _class8, _temp4, _class10, _temp5, _class12, _temp6, _class14, _temp7, _class16, _temp8, _class18, _temp9, _class20, _temp10, _class22, _temp11, _class24, _temp12, _class26, _temp13, _class28, _temp14, _class30, _temp15, _class32, _temp16;
+
 /** 
  * --------------------------------------------------------
  * ###en
@@ -12,13 +14,15 @@
  * 描述：rabbit 引擎是一个极易上手并且性能强劲的H5游戏引擎，具有 实体-组件-管线 的特色开发架构。
  * --------------------------------------------------------
 */
-
+import { rClass } from "../ts/Decorator.js";
+const rabbitClass = {};
 /**
  * ###en
  * 
  * ###zh
  * 键盘按键枚举（需补齐其他不常用键）
  */
+
 var RabKeyType;
 /**
  * ###en
@@ -71,31 +75,27 @@ var RabKeyType;
   RabKeyType[RabKeyType["SPACE"] = 32] = "SPACE";
 })(RabKeyType || (RabKeyType = {}));
 
-class Rabbit {
-  static Instance = null;
-  canvas = null;
-  camera = null;
-  context = null;
+let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
   /**
    * 存储图片的map
    */
-
-  static images = new Map();
-  audio = {};
-  world = null;
-  mouse = {
-    x: undefined,
-    y: undefined,
-    pressed: false
-  };
-  offset = [0, 0];
-  fps = 60;
-  static audioChannels = [];
-  keysPressed = [];
-  maxFrameTime = 0.030;
-  static version = 0.2;
-
   constructor() {
+    this.canvas = null;
+    this.camera = null;
+    this.context = null;
+    this.audio = {};
+    this.world = null;
+    this.mouse = {
+      x: undefined,
+      y: undefined,
+      pressed: false
+    };
+    this.offset = [0, 0];
+    this.fps = 60;
+    this.keysPressed = [];
+    this.maxFrameTime = 0.030;
+    this.time = void 0;
+    this._nextWorld = void 0;
     if (!Rabbit.Instance) Rabbit.Instance = this;
   }
   /**
@@ -333,9 +333,9 @@ class Rabbit {
     }
   }
 
-}
+}, _class2.Instance = null, _class2.images = new Map(), _class2.audioChannels = [], _class2.version = 0.2, _temp)) || _class;
 
-class RabObject {
+let RabObject = rClass(_class3 = class RabObject {
   clone() {
     let f = function () {};
 
@@ -354,9 +354,15 @@ class RabObject {
     return o;
   }
 
-}
+}) || _class3;
 
-class Component extends RabObject {
+let Component = rClass(_class4 = (_temp2 = class Component extends RabObject {
+  constructor(...args) {
+    super(...args);
+    this.entity = void 0;
+    this.enabled = void 0;
+  }
+
   onLoad() {}
 
   start() {}
@@ -377,17 +383,27 @@ class Component extends RabObject {
     if (typeof type == "string") return this.entity.getComponent(type);else return this.entity.getComponent(type);
   }
 
-}
+}, _temp2)) || _class4;
 
-class TestComponent extends Component {
-  className = "TestComponent";
-}
+let TestComponent = rClass(_class6 = (_temp3 = class TestComponent extends Component {
+  constructor(...args) {
+    super(...args);
+    this.className = "TestComponent";
+  }
 
-class Entity extends RabObject {
-  components = [];
+}, _temp3)) || _class6;
 
+let Entity = rClass(_class8 = (_temp4 = class Entity extends RabObject {
   constructor(x, y, graphic) {
     super();
+    this.x = void 0;
+    this.y = void 0;
+    this.graphic = void 0;
+    this.type = void 0;
+    this.world = void 0;
+    this.name = void 0;
+    this.id = void 0;
+    this.components = [];
     this.x = x ? x : 0;
     this.y = y ? y : 0;
     this.graphic = graphic ? graphic : null;
@@ -419,15 +435,23 @@ class Entity extends RabObject {
     let newCom = null;
 
     if (typeof com == "string") {
-      for (let c in rabbitClass) {
-        if (c.constructor.name == com) {
-          newCom = window[com]();
+      try {
+        if (rabbitClass[com]) {
+          newCom = new rabbitClass[com].prototype.constructor();
           this.components.push(newCom);
+        } else {
+          console.log("不存在此component", com);
         }
+      } catch (e) {
+        console.error("通过string字符串addComponent出错", e);
       }
     } else {
-      newCom = new com();
-      this.components.push(newCom);
+      try {
+        newCom = new com();
+        this.components.push(newCom);
+      } catch (e) {
+        console.error("通过传入类addComponent错误，可能原因为类实现有误");
+      }
     }
 
     return newCom;
@@ -436,22 +460,34 @@ class Entity extends RabObject {
   getComponent(type) {
     // console.log("test",new TestPro().__proto__.constructor.name);
     // console.log("test",TestPro.prototype.constructor.name);
-    for (let i = 0; i < this.components.length; i++) {
-      const com = this.components[i];
+    if (typeof type == "string") {
+      for (let i = 0; i < this.components.length; i++) {
+        const com = this.components[i];
 
-      if (com.__proto__.constructor.name == type.prototype.constructor.name) {
-        return com;
+        if (com.__proto__.constructor.name == type) {
+          return com;
+        }
+      }
+    } else {
+      for (let i = 0; i < this.components.length; i++) {
+        const com = this.components[i];
+
+        if (com.__proto__.constructor.name == type.prototype.constructor.name) {
+          return com;
+        }
       }
     }
 
     return null;
   }
 
-}
+}, _temp4)) || _class8;
 
-class Sfx extends RabObject {
+let Sfx = rClass(_class10 = (_temp5 = class Sfx extends RabObject {
   constructor(soundurl) {
     super();
+    this.soundUrl = void 0;
+    this.audio = void 0;
     this.soundUrl = soundurl;
   }
 
@@ -460,16 +496,15 @@ class Sfx extends RabObject {
     this.audio.play();
   }
 
-}
+}, _temp5)) || _class10;
 
-class World extends RabObject {
+let World = rClass(_class12 = (_temp6 = class World extends RabObject {
   constructor() {
     super();
+    this.entities = [];
+    this.removed = [];
+    this.maxID = 0;
   }
-
-  entities = [];
-  removed = [];
-  maxID = 0;
 
   add(e) {
     this.entities.push(e);
@@ -564,33 +599,41 @@ class World extends RabObject {
     return collisions;
   }
 
-}
+}, _temp6)) || _class12;
 
-class Collision {
+let Collision = rClass(_class14 = (_temp7 = class Collision {
   constructor(other, rect) {
+    this.other = void 0;
+    this.rect = void 0;
     this.other = other;
     this.rect = rect;
   }
 
-}
+}, _temp7)) || _class14;
 
-class Graphic {
-  x = 0;
-  y = 0;
-  z = 0;
-  w = 0;
-  h = 0;
-  visible = true;
+let Graphic = rClass(_class16 = (_temp8 = class Graphic {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+    this.w = 0;
+    this.h = 0;
+    this.visible = true;
+  }
 
   draw() {}
 
   update(dtime) {}
 
-}
+}, _temp8)) || _class16;
 
-class RabText extends Graphic {
+let RabText = rClass(_class18 = (_temp9 = class RabText extends Graphic {
   constructor(x, y, text, font, colour, size) {
     super();
+    this.text = void 0;
+    this.font = void 0;
+    this.colour = void 0;
+    this.size = void 0;
     this.x = x;
     this.y = y;
     this.text = text;
@@ -630,11 +673,15 @@ class RabText extends Graphic {
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
   }
 
-}
+}, _temp9)) || _class18;
 
-class Rect extends RabObject {
+let Rect = rClass(_class20 = (_temp10 = class Rect extends RabObject {
   constructor(x, y, w, h) {
     super();
+    this.x = void 0;
+    this.y = void 0;
+    this.w = void 0;
+    this.h = void 0;
     this.x = x;
     this.y = y;
     this.w = w;
@@ -678,11 +725,14 @@ class Rect extends RabObject {
     return this.y;
   }
 
-}
+}, _temp10)) || _class20;
 
-class Circle extends RabObject {
+let Circle = rClass(_class22 = (_temp11 = class Circle extends RabObject {
   constructor(x, y, radius) {
     super();
+    this.x = void 0;
+    this.y = void 0;
+    this.radius = void 0;
     this.x = x;
     this.y = y;
     this.radius = radius;
@@ -707,13 +757,14 @@ class Circle extends RabObject {
     this.y = pos[1];
   }
 
-}
+}, _temp11)) || _class22;
 
 ;
 
-class GraphicList extends Graphic {
+let GraphicList = rClass(_class24 = (_temp12 = class GraphicList extends Graphic {
   constructor(graphics) {
     super();
+    this.graphics = void 0;
     this.graphics = graphics || [];
   }
 
@@ -772,13 +823,16 @@ class GraphicList extends Graphic {
     }
   }
 
-}
+}, _temp12)) || _class24;
 
-class RabImage extends Graphic {
-  ignoreCamera = false;
-
+let RabImage = rClass(_class26 = (_temp13 = class RabImage extends Graphic {
   constructor(x, y, image) {
     super();
+    this._x = void 0;
+    this._y = void 0;
+    this.alpha = void 0;
+    this.image = void 0;
+    this.ignoreCamera = false;
     this._x = x;
     this._y = y;
     this.x = x;
@@ -814,13 +868,29 @@ class RabImage extends Graphic {
     this.h = this.image.height;
   }
 
-}
+}, _temp13)) || _class26;
 
-class Sprite extends Graphic {
-  ignoreCamera = false;
-
+let Sprite = rClass(_class28 = (_temp14 = class Sprite extends Graphic {
   constructor(x, y, image, frameW, frameH) {
     super();
+    this._x = void 0;
+    this._y = void 0;
+    this.origin = void 0;
+    this.scale = void 0;
+    this.image = void 0;
+    this.frame = void 0;
+    this.animations = void 0;
+    this.animation = void 0;
+    this.fps = void 0;
+    this.time = void 0;
+    this.frameWidth = void 0;
+    this.frameHeight = void 0;
+    this.flip = void 0;
+    this.alpha = void 0;
+    this.angle = void 0;
+    this.ignoreCamera = false;
+    this.playing = void 0;
+    this.loop = void 0;
     this._x = x;
     this._y = y;
     this.x = x;
@@ -917,11 +987,18 @@ class Sprite extends Graphic {
     }
   }
 
-}
+}, _temp14)) || _class28;
 
-class Tilemap extends Graphic {
+let Tilemap = rClass(_class30 = (_temp15 = class Tilemap extends Graphic {
   constructor(x, y, image, tw, th, gw, gh, tiles) {
     super();
+    this.gridW = void 0;
+    this.gridH = void 0;
+    this.tileW = void 0;
+    this.tileH = void 0;
+    this.image = void 0;
+    this.canvas = void 0;
+    this.tiles = void 0;
     this.x = x;
     this.y = y;
     this.gridW = gw;
@@ -984,13 +1061,15 @@ class Tilemap extends Graphic {
     }
   }
 
-}
+}, _temp15)) || _class30;
 
-class Canvas extends Graphic {
-  ignoreCamera = false;
-
+let Canvas = rClass(_class32 = (_temp16 = class Canvas extends Graphic {
   constructor(x, y, w, h) {
     super();
+    this.alpha = void 0;
+    this.canvas = void 0;
+    this.context = void 0;
+    this.ignoreCamera = false;
     this.x = x;
     this.y = y;
     this.w = w;
@@ -1021,26 +1100,7 @@ class Canvas extends Graphic {
     return c;
   }
 
-}
+}, _temp16)) || _class32; // const rabbitClass = {  Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
 
-const rabbitClass = {
-  Rabbit,
-  Canvas,
-  Circle,
-  Collision,
-  Entity,
-  Graphic,
-  GraphicList,
-  RabObject,
-  RabText,
-  Rect,
-  Sfx,
-  Sprite,
-  Tilemap,
-  World,
-  RabKeyType,
-  RabImage,
-  Component,
-  TestComponent
-};
-export { Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+
+export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
