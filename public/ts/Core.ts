@@ -15,7 +15,10 @@
 
 import { rClass } from "../ts/Decorator.js";
 
-const rabbitClass = {};
+/**
+ * 记录了所有Engine Class的map
+ */
+export const rabbitClass = {};
 
 /**
  * ###en
@@ -23,7 +26,7 @@ const rabbitClass = {};
  * ###zh
  * 键盘按键枚举（需补齐其他不常用键）
  */
-enum RabKeyType {
+export enum RabKeyType {
     A = 65,
     B = 66,
     C = 67,
@@ -77,8 +80,12 @@ enum RabKeyType {
  * 游戏实例
  */
 @rClass
-class Rabbit {
+export class Rabbit {
+
     static Instance: Rabbit = null;
+    get winSize() {
+        return new Rect(0, 0, this.canvas.width, this.canvas.height);
+    }
     canvas: HTMLCanvasElement = null;
     camera: any = null;
     context: CanvasRenderingContext2D = null;
@@ -97,7 +104,9 @@ class Rabbit {
     time: number;
     private _nextWorld: any;
     static version: number = 0.2;
-
+    worldMap: Map<string, World> = new Map();
+    isRabbitRun: boolean = false;
+    updateId: any = null;
     constructor() {
         if (!Rabbit.Instance)
             Rabbit.Instance = this;
@@ -106,12 +115,12 @@ class Rabbit {
      * 初始化游戏
      * @param canvasid 传入canvas的html id 
      */
-    init(canvasid: string): void {
+    init(canvasid?: string): void {
+        canvasid = canvasid ? canvasid : 'rabbit-canvas';
         const canvas: HTMLCanvasElement = document.getElementById(canvasid) as HTMLCanvasElement;
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
-        this.world = new World();
-        console.log("world", this.world)
+
         this.canvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e) };
         document.onkeydown = (e) => { Rabbit.Instance.keyDown(e) };
         document.onkeyup = (e) => { Rabbit.Instance.keyUp(e) };
@@ -129,9 +138,13 @@ class Rabbit {
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
 
-        this.camera = { x: 0, y: 0 };
+        this.resetCamera();
         console.log("rabbit 初始化完成")
     }
+    private resetCamera() {
+        this.camera = { x: 0, y: 0 };
+    }
+
     /**
      * 输出图片错误
      * @param url 图片地址
@@ -261,7 +274,7 @@ class Rabbit {
     run() {
         const dtime: number = 1000 / this.fps;
         this.time = Date.now();
-        setInterval(() => { this.update() }, dtime);
+        this.updateId = setInterval(() => { this.update() }, dtime);
     }
 
     /**
@@ -277,6 +290,29 @@ class Rabbit {
         this._nextWorld = world;
     }
 
+    addWorld(world: World) {
+        this.worldMap.set(world.name, world);
+    }
+    runWorld(worldname: string) {
+        if (this.isRabbitRun) this.stop();
+        this.world = this.worldMap.get(worldname);
+        if (this.world) {
+            this.resetCamera();
+            this.world.init();
+            this.run();
+            this.isRabbitRun = true;
+        } else {
+            console.error("runWorld world不存在");
+        }
+        // console.log("this.world", this.world)
+    }
+    stop():boolean {
+        if (this.updateId) clearInterval(this.updateId)
+        else return false;
+        this.updateId = null;
+        this.isRabbitRun = false;
+        return true;
+    }
     update() {
         var dtime = (Date.now() - this.time) / 1000;
         if (dtime > this.maxFrameTime)
@@ -293,7 +329,7 @@ class Rabbit {
     }
 }
 @rClass
-class RabObject {
+export class RabObject {
     clone() {
         let f = function () { };
         f.prototype = this;
@@ -310,7 +346,7 @@ class RabObject {
     }
 }
 @rClass
-class Component extends RabObject {
+export class Component extends RabObject {
     entity: Entity;
     enabled: boolean;
 
@@ -329,7 +365,7 @@ class Component extends RabObject {
     onDestroy() {
 
     }
-    update() {
+    update(dtime) {
 
     }
 
@@ -353,14 +389,13 @@ class Component extends RabObject {
 
 }
 @rClass
-class TestComponent extends Component {
-    className: string = "TestComponent";
+export class TestComponent extends Component {
 }
 @rClass
-class Entity extends RabObject {
+export class Entity extends RabObject {
     x: number;
     y: number;
-    graphic: Graphic;
+    graphic: GraphicComponent;
     type: string;
     world: World;
     name: string;
@@ -368,11 +403,10 @@ class Entity extends RabObject {
     components: Component[] = [];
 
 
-    constructor(x?, y?, graphic?: Graphic) {
+    constructor(x?, y?) {
         super();
         this.x = x ? x : 0;
         this.y = y ? y : 0;
-        this.graphic = graphic ? graphic : null;
         this.type = "entity";
         this.world = null;
     }
@@ -394,6 +428,7 @@ class Entity extends RabObject {
     }
 
     draw() {
+        // console.log("进来了draw")
         if (this.graphic && this.graphic.visible != false)
             this.graphic.draw();
     }
@@ -427,6 +462,12 @@ class Entity extends RabObject {
                 console.error("通过传入类addComponent错误，可能原因为类实现有误");
             }
         }
+        if (newCom) {
+            newCom.entity = this;
+            if (newCom["draw"]) {
+                this.graphic = newCom as GraphicComponent;
+            }
+        }
         return newCom as T;
     }
 
@@ -454,7 +495,7 @@ class Entity extends RabObject {
     }
 }
 @rClass
-class Sfx extends RabObject {
+export class Sfx extends RabObject {
 
     soundUrl: string;
     audio: HTMLAudioElement;
@@ -469,22 +510,33 @@ class Sfx extends RabObject {
     }
 }
 @rClass
-class World extends RabObject {
-    constructor() {
+export class World extends RabObject {
+
+    constructor(name: string) {
         super();
+        this.name = name;
     }
 
+    name: string;
     entities: Entity[] = [];
     removed: Entity[] = [];
-    maxID: number = 0;
+    maxId: number = 0;
 
-    add(e) {
+    init: () => void;
+    /**
+     * 在世界中增加实体
+     * @param e 要增加的实体
+     */
+    add(e: Entity) {
         this.entities.push(e);
-        e.id = this.maxID++;
+        e.id = this.maxId++;
         e.world = this;
         e.added();
     }
 
+    /**
+     * 排序并派发世界中所有有渲染组件的实体执行渲染任务
+     */
     draw() {
         this.entities.sort((lhs, rhs) => {
             if (!lhs.graphic)
@@ -500,14 +552,19 @@ class World extends RabObject {
         }
     }
 
-    filter(f) {
-        let l = [];
-        for (let e = 0; e < this.entities.length; ++e) {
-            if (f(this.entities[e])) {
-                l.push(this.entities[e]);
+    /**
+     * 使用过滤器函数得到相应的实体数组
+     * @param filtfunc 过滤器函数
+     * @return 实体数组
+     */
+    filter(filtfunc: (e: Entity) => boolean): Entity[] {
+        let entities: Entity[] = [];
+        for (let i = 0; i < this.entities.length; ++i) {
+            if (filtfunc(this.entities[i])) {
+                entities.push(this.entities[i]);
             }
         }
-        return l;
+        return entities;
     }
 
     getType(type) {
@@ -570,7 +627,7 @@ class World extends RabObject {
     }
 }
 @rClass
-class Collision {
+export class Collision {
     other: any;
     rect: any;
     constructor(other, rect) {
@@ -579,7 +636,7 @@ class Collision {
     }
 }
 @rClass
-class Graphic {
+export class GraphicComponent extends Component {
     x: number = 0;
     y: number = 0;
     z: number = 0;
@@ -589,51 +646,66 @@ class Graphic {
     draw() {
 
     }
-    update(dtime) {
+}
 
-    }
+
+export enum TextAlignType {
+    left = "left",
+    right = "right",
+    center = "center",
+    start = "start",
+    end = "end",
 }
 @rClass
-class RabText extends Graphic {
+export class Text extends GraphicComponent {
+    static TextAlignType = TextAlignType;
     text: string;
     font: string;
     colour: string;
     size: number;
-    constructor(x, y, text, font?, colour?, size?) {
+    align: TextAlignType;
+    constructor(x?, y?, text?, font?, colour?, size?, align?) {
         super();
-        this.x = x;
-        this.y = y;
-        this.text = text;
+        this.x = x || 0;
+        this.y = y || 0;
+        this.text = text || "";
         this.font = font || "sans";
         this.colour = colour || "white";
         this.size = size || 14;
-
+        this.align = align || "left";
         Rabbit.Instance.context.textBaseline = 'top';
+        Rabbit.Instance.context.textAlign = this.align;
         Rabbit.Instance.context.font = this.size + "px " + this.font;
         Rabbit.Instance.context.fillStyle = this.colour;
         this.w = Rabbit.Instance.context.measureText(text).width;
         this.h = this.size;
 
-        console.log("x", this.x);
-        console.log("y", this.y);
-        console.log("width", this.w);
-        console.log("height", this.h);
-        console.log("text", this.text);
-        console.log("font", this.font);
-        console.log("colour", this.colour);
-        console.log("size", this.size);
+        // console.log("x", this.x);
+        // console.log("y", this.y);
+        // console.log("width", this.w);
+        // console.log("height", this.h);
+        // console.log("text", this.text);
+        // console.log("font", this.font);
+        // console.log("colour", this.colour);
+        // console.log("size", this.size);
 
-        console.log("textBaseline", Rabbit.Instance.context.textBaseline);
-        console.log("font", Rabbit.Instance.context.font);
-        console.log("fillStyle", Rabbit.Instance.context.fillStyle);
-        console.log("context", Rabbit.Instance.context);
+        // console.log("textBaseline", Rabbit.Instance.context.textBaseline);
+        // console.log("font", Rabbit.Instance.context.font);
+        // console.log("fillStyle", Rabbit.Instance.context.fillStyle);
+        // console.log("context", Rabbit.Instance.context);
 
     }
-
+    setAlign(align: TextAlignType) {
+        this.align = align;
+    }
+    setPosition(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
     draw() {
-        // console.log("RabText draw 调用")
         this.w = Rabbit.Instance.context.measureText(this.text).width;
         Rabbit.Instance.context.textBaseline = 'top';
+        Rabbit.Instance.context.textAlign = this.align;
         Rabbit.Instance.context.font = this.size + "px " + this.font;
         Rabbit.Instance.context.fillStyle = this.colour;
         Rabbit.Instance.context.fillText(this.text, this.x, this.y);
@@ -645,7 +717,7 @@ class RabText extends Graphic {
     }
 }
 @rClass
-class Rect extends RabObject {
+export class Rect extends RabObject {
     x: number;
     y: number;
     w: number;
@@ -705,7 +777,7 @@ class Rect extends RabObject {
     }
 }
 @rClass
-class Circle extends RabObject {
+export class Circle extends RabObject {
     x: number;
     y: number;
     radius: number;
@@ -737,8 +809,8 @@ class Circle extends RabObject {
     }
 };
 @rClass
-class GraphicList extends Graphic {
-    graphics: Graphic[];
+export class GraphicList extends GraphicComponent {
+    graphics: GraphicComponent[];
     constructor(graphics) {
         super();
         this.graphics = graphics || [];
@@ -798,7 +870,7 @@ class GraphicList extends Graphic {
     }
 }
 @rClass
-class RabImage extends Graphic {
+export class RabImage extends GraphicComponent {
     _x: number;
     _y: number;
     alpha: number;
@@ -821,13 +893,14 @@ class RabImage extends Graphic {
 
     draw() {
         if (!(this.image as any).valid) return;
-
         Rabbit.Instance.context.save();
         Rabbit.Instance.context.globalAlpha = this.alpha;
         if (this.ignoreCamera)
             Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
         else
             Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
+
+        // console.log("camera",Rabbit.Instance.camera);
         Rabbit.Instance.context.drawImage(this.image, 0, 0);
         Rabbit.Instance.context.globalAlpha = 1;
         Rabbit.Instance.context.restore();
@@ -853,7 +926,7 @@ class RabImage extends Graphic {
     }
 }
 @rClass
-class Sprite extends Graphic {
+export class Sprite extends GraphicComponent {
     private _x: any;
     private _y: any;
     origin: number[];
@@ -981,7 +1054,7 @@ class Sprite extends Graphic {
     }
 }
 @rClass
-class Tilemap extends Graphic {
+export class Tilemap extends GraphicComponent {
     gridW: number;
     gridH: number;
     tileW: number;
@@ -1061,7 +1134,7 @@ class Tilemap extends Graphic {
     }
 }
 @rClass
-class Canvas extends Graphic {
+export class Canvas extends GraphicComponent {
     alpha: number;
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
@@ -1103,5 +1176,4 @@ class Canvas extends Graphic {
         return c;
     };
 }
-// const rabbitClass = {  Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
-export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+// export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

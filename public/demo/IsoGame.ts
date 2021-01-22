@@ -1,9 +1,9 @@
-import { Entity, Graphic, GraphicList, Rabbit, RabImage, World } from "../ts/Core";
+import { Entity, GraphicComponent, GraphicList, Rabbit, RabImage, World } from "../ts/Core.js";
 
 const TILE_W = 64;
 const TILE_H = 32;
 
-class IsoTilemap extends Graphic {
+class IsoTilemap extends GraphicComponent {
 
 	gridW: number;
 	gridH: number;
@@ -115,18 +115,17 @@ class Unit extends Entity {
 
 class IsoWorld extends World {
 	terrain: Terrain;
-	constructor() {
-		super();
+	constructor(name) {
+		super(name);
 		this.terrain = new Terrain();
 		this.add(this.terrain);
-		Rabbit.Instance.camera = { x: (12 * TILE_W / 2), y: 0 };
 	}
 }
 
 class City extends Entity {
-	gridX:number;
-	gridY:number;
-	image:RabImage;
+	gridX: number;
+	gridY: number;
+	image: RabImage;
 	constructor(gx, gy) {
 		super();
 		this.gridX = gx;
@@ -144,18 +143,17 @@ class City extends Entity {
 	}
 }
 
-function main() {
-	const rabbit = new Rabbit();
-	rabbit.init('rabbit-canvas');
-	rabbit.world = new IsoWorld();
-	const world = rabbit.world as IsoWorld;
-	world.terrain.setTile(0, 5, 0);
-	world.add(new Town(0, 5));
-	world.add(new Unit(0, 5, 'banner_red'));
-	world.terrain.setTile(11, 6, 0);
-	world.add(new Town(11, 6));
-	world.add(new Unit(11, 6, 'banner_blue'));
-	world.add(new City(0, 0));
-	rabbit.run();
+export function main(): World {
+	const world = new IsoWorld("demo3");
+	world.init = () => {
+		Rabbit.Instance.camera = { x: (12 * TILE_W / 2), y: 0 };
+		world.terrain.setTile(0, 5, 0);
+		world.add(new Town(0, 5));
+		world.add(new Unit(0, 5, 'banner_red'));
+		world.terrain.setTile(11, 6, 0);
+		world.add(new Town(11, 6));
+		world.add(new Unit(11, 6, 'banner_blue'));
+		world.add(new City(0, 0));
+	}
+	return world;
 }
-// export {City,IsoTilemap,IsoWorld,Terrain,Town,Unit,main};

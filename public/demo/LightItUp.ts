@@ -1,4 +1,4 @@
-import { Entity, Circle, Canvas, Sfx, Rabbit } from "../ts/Core"
+import { Entity, Circle, Canvas, Sfx, Rabbit, World } from "../ts/Core.js";
 class Light extends Entity {
     gx: any;
     gy: any;
@@ -32,7 +32,7 @@ class Light extends Entity {
         this.graphic = this.dark;
 
     }
-    mouseDown(){
+    mouseDown() {
         super.mouseDown();
         console.log("点击棋子");
         if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y]))
@@ -86,4 +86,12 @@ class Board extends Entity {
         new Sfx("audio/bell.ogg").play();
         alert("Victory!");
     }
+}
+
+export function main(): World {
+    const world = new World("demo4");
+    world.init = () => {
+        world.add(new Board());
+    };
+    return world;
 }

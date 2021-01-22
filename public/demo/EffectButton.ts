@@ -1,9 +1,9 @@
-import { Entity, Rabbit, RabImage, Rect, Sfx } from "../ts/Core";
+import { Entity, Rabbit, RabImage, Rect, Sfx, World } from "../ts/Core.js";
 
-class EffectButton extends Entity {
-    image:RabImage;
-    sound:Sfx;
-    rect:Rect;
+export class EffectButton extends Entity {
+    image: RabImage;
+    sound: Sfx;
+    rect: Rect;
     constructor(x, y, image, sound) {
         super();
         this.x = x;
@@ -27,9 +27,10 @@ class EffectButton extends Entity {
     }
 }
 
-function main() {
-    const rabbit = new Rabbit();
-    rabbit.init('rabbit-canvas');
-    rabbit.world.add(new EffectButton(0, 0, "graphics/audio_test.png", "audio/bell.ogg"));
-    rabbit.run();
+export function main(): World {
+    const world = new World("demo2");
+    world.init = () => {
+        world.add(new EffectButton(0, 0, "graphics/audio_test.png", "audio/bell.ogg"));
+    };
+    return world;
 }

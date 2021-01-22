@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "rabbit test",
-    "build": "npx babel public --out-dir build/public --presets=@babel/preset-typescript --extensions '.ts'"
+    "build": "npx babel public --out-dir build/public --presets=@babel/preset-typescript --extensions \".ts\"",
+    "server": ""
   },
   "repository": {
     "type": "git",

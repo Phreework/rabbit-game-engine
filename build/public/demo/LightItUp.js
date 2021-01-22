@@ -1,4 +1,4 @@
-import { Entity, Circle, Canvas, Sfx, Rabbit } from "../ts/Core";
+import { Entity, Circle, Canvas, Sfx, Rabbit, World } from "../ts/Core.js";
 
 class Light extends Entity {
   constructor(gx, gy, radius, board) {
@@ -86,4 +86,14 @@ class Board extends Entity {
     alert("Victory!");
   }
 
+}
+
+export function main() {
+  const world = new World("demo4");
+
+  world.init = () => {
+    world.add(new Board());
+  };
+
+  return world;
 }
