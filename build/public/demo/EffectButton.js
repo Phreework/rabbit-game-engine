@@ -1,4 +1,4 @@
-import { Entity, Rabbit, RabImage, Rect, Sfx, World } from "../ts/Core.js";
+import { AudioSystem, Entity, Rabbit, RabImage, Rect, Sfx, World } from "../ts/Core.js";
 export class EffectButton extends Entity {
   constructor(x, y, image, sound) {
     super();
@@ -29,7 +29,20 @@ export function main() {
   const world = new World("demo2");
 
   world.init = () => {
-    world.add(new EffectButton(0, 0, "graphics/audio_test.png", "audio/bell.ogg"));
+    const entity = new Entity();
+    const image = entity.addComponent(RabImage);
+    image.setImageAsync("graphics/audio_test.png").then(() => {
+      entity.rect = new Rect(0, 0, image.w, image.h);
+    });
+
+    entity.mouseDown = () => {
+      if (entity.rect.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y])) {
+        AudioSystem.play("audio/bell.ogg");
+        console.log("play");
+      }
+    };
+
+    world.add(entity);
   };
 
   return world;

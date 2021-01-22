@@ -24,7 +24,7 @@ export class TestDemo {
 
     rabbit.runWorld(demos[0].name);
 
-    rabbit.keyDown = () => {
+    rabbit.keyDown = key => {
       this.demoInd++;
       this.demoInd = this.demoInd < demos.length ? this.demoInd : 0;
       rabbit.runWorld(demos[this.demoInd].name);

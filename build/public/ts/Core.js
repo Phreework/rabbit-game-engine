@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class6, _class7, _temp3, _class9, _temp4, _class11, _temp5, _class13, _temp6, _class15, _temp7, _class17, _class18, _temp8, _class19, _temp9, _class21, _temp10, _class23, _temp11, _class25, _temp12, _class27, _temp13, _class29, _temp14, _class31, _temp15;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class6, _class7, _temp3, _class9, _temp4, _class11, _class12, _temp5, _class14, _temp6, _class16, _temp7, _class18, _class19, _temp8, _class20, _temp9, _class22, _temp10, _class24, _temp11, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15;
 
 /** 
  * --------------------------------------------------------
@@ -191,6 +191,29 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     return img;
   }
 
+  static loadImageAsync(url) {
+    return new Promise((success, fail) => {
+      if (url in this.images) {
+        success(this.images[url]);
+      }
+
+      const img = new Image();
+      img.src = url;
+
+      img.onload = () => {
+        img.valid = true;
+        this.images[url] = img;
+        success(img);
+      };
+
+      img.onerror = () => {
+        img.valid = false;
+        Rabbit.Instance.imageError(img.src);
+        fail();
+      };
+    });
+  }
+
   static loadAudio(url) {
     let channel = null;
 
@@ -310,6 +333,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
   run() {
     const dtime = 1000 / this.fps;
     this.time = Date.now();
+    this.start();
     this.updateId = setInterval(() => {
       this.update();
     }, dtime);
@@ -350,9 +374,14 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
   stop() {
     if (this.updateId) clearInterval(this.updateId);else return false;
+    this.world.stop();
     this.updateId = null;
     this.isRabbitRun = false;
     return true;
+  }
+
+  start() {
+    this.world.start();
   }
 
   update() {
@@ -425,14 +454,17 @@ export let Entity = rClass(_class7 = (_temp3 = class Entity extends RabObject {
     super();
     this.x = void 0;
     this.y = void 0;
+    this.rect = void 0;
     this.graphic = void 0;
     this.type = void 0;
     this.world = void 0;
     this.name = void 0;
     this.id = void 0;
+    this.active = true;
     this.components = [];
     this.x = x ? x : 0;
     this.y = y ? y : 0;
+    this.rect = new Rect(0, 0, 0, 0);
     this.type = "entity";
     this.world = null;
   }
@@ -453,10 +485,33 @@ export let Entity = rClass(_class7 = (_temp3 = class Entity extends RabObject {
 
   draw() {
     // console.log("进来了draw")
-    if (this.graphic && this.graphic.visible != false) this.graphic.draw();
+    if (this.active && this.graphic && this.graphic.visible != false) this.graphic.draw();
   }
 
-  update(dtime) {}
+  start() {
+    const len = this.components.length;
+
+    if (len == 0) {
+      return;
+    } else {
+      for (let i = 0; i < len; i++) {
+        this.components[i].onLoad();
+        this.components[i].start();
+      }
+    }
+  }
+
+  update(dtime) {
+    const len = this.components.length;
+
+    if (len == 0) {
+      return;
+    } else {
+      for (let i = 0; i < len; i++) {
+        this.components[i].update(dtime);
+      }
+    }
+  }
 
   addComponent(com) {
     let newCom = null;
@@ -465,7 +520,6 @@ export let Entity = rClass(_class7 = (_temp3 = class Entity extends RabObject {
       try {
         if (rabbitClass[com]) {
           newCom = new rabbitClass[com].prototype.constructor();
-          this.components.push(newCom);
         } else {
           console.log("不存在此component", com);
         }
@@ -475,17 +529,22 @@ export let Entity = rClass(_class7 = (_temp3 = class Entity extends RabObject {
     } else {
       try {
         newCom = new com();
-        this.components.push(newCom);
       } catch (e) {
         console.error("通过传入类addComponent错误，可能原因为类实现有误");
       }
     }
 
     if (newCom) {
+      this.components.push(newCom);
       newCom.entity = this;
 
       if (newCom["draw"]) {
         this.graphic = newCom;
+      }
+
+      if (Rabbit.Instance.isRabbitRun) {
+        newCom.onLoad();
+        newCom.start();
       }
     }
 
@@ -531,7 +590,14 @@ export let Sfx = rClass(_class9 = (_temp4 = class Sfx extends RabObject {
   }
 
 }, _temp4)) || _class9;
-export let World = rClass(_class11 = (_temp5 = class World extends RabObject {
+export let AudioSystem = rClass(_class11 = class AudioSystem extends RabObject {
+  static play(soundurl) {
+    const audio = Rabbit.loadAudio(soundurl);
+    audio.play();
+  }
+
+}) || _class11;
+export let World = rClass(_class12 = (_temp5 = class World extends RabObject {
   constructor(name) {
     super();
     this.name = void 0;
@@ -565,8 +631,8 @@ export let World = rClass(_class11 = (_temp5 = class World extends RabObject {
       return lhs.graphic.z - rhs.graphic.z;
     });
 
-    for (let e = 0; e < this.entities.length; ++e) {
-      this.entities[e].draw();
+    for (let i = 0; i < this.entities.length; ++i) {
+      this.entities[i].draw();
     }
   }
   /**
@@ -618,14 +684,16 @@ export let World = rClass(_class11 = (_temp5 = class World extends RabObject {
   }
 
   _update(dtime) {
-    for (var e = 0; e < this.entities.length; ++e) {
-      if (this.entities[e].graphic) this.entities[e].graphic.update(dtime);
-      this.entities[e].update(dtime);
-    }
+    for (let i = 0; i < this.entities.length; ++i) {
+      const entity = this.entities[i];
+      if (!entity.active) continue;
+      entity.update(dtime);
+    } //可能开销比较大？
 
-    for (var r = 0; r < this.removed.length; ++r) {
-      for (var e = 0; e < this.entities.length; ++e) {
-        if (this.entities[e] == this.removed[r]) this.entities.splice(e, 1);
+
+    for (let j = 0; j < this.removed.length; ++j) {
+      for (let i = 0; i < this.entities.length; ++i) {
+        if (this.entities[i] == this.removed[j]) this.entities.splice(i, 1);
       }
     }
 
@@ -634,6 +702,21 @@ export let World = rClass(_class11 = (_temp5 = class World extends RabObject {
 
   update(dtime) {
     this._update(dtime);
+  }
+
+  start() {
+    console.log("start事件总线执行");
+
+    for (let i = 0; i < this.entities.length; ++i) {
+      const entity = this.entities[i];
+      if (entity.active) entity.start();
+    }
+  }
+
+  stop() {
+    this.entities = [];
+    this.removed = [];
+    this.maxId = 0;
   }
 
   collide(rect) {
@@ -649,8 +732,8 @@ export let World = rClass(_class11 = (_temp5 = class World extends RabObject {
     return collisions;
   }
 
-}, _temp5)) || _class11;
-export let Collision = rClass(_class13 = (_temp6 = class Collision {
+}, _temp5)) || _class12;
+export let Collision = rClass(_class14 = (_temp6 = class Collision {
   constructor(other, rect) {
     this.other = void 0;
     this.rect = void 0;
@@ -658,8 +741,8 @@ export let Collision = rClass(_class13 = (_temp6 = class Collision {
     this.rect = rect;
   }
 
-}, _temp6)) || _class13;
-export let GraphicComponent = rClass(_class15 = (_temp7 = class GraphicComponent extends Component {
+}, _temp6)) || _class14;
+export let GraphicComponent = rClass(_class16 = (_temp7 = class GraphicComponent extends Component {
   constructor(...args) {
     super(...args);
     this.x = 0;
@@ -672,7 +755,7 @@ export let GraphicComponent = rClass(_class15 = (_temp7 = class GraphicComponent
 
   draw() {}
 
-}, _temp7)) || _class15;
+}, _temp7)) || _class16;
 export let TextAlignType;
 
 (function (TextAlignType) {
@@ -683,7 +766,7 @@ export let TextAlignType;
   TextAlignType["end"] = "end";
 })(TextAlignType || (TextAlignType = {}));
 
-export let Text = rClass(_class17 = (_temp8 = _class18 = class Text extends GraphicComponent {
+export let Text = rClass(_class18 = (_temp8 = _class19 = class Text extends GraphicComponent {
   constructor(x, y, text, font, colour, size, align) {
     super();
     this.text = void 0;
@@ -740,8 +823,8 @@ export let Text = rClass(_class17 = (_temp8 = _class18 = class Text extends Grap
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
   }
 
-}, _class18.TextAlignType = TextAlignType, _temp8)) || _class17;
-export let Rect = rClass(_class19 = (_temp9 = class Rect extends RabObject {
+}, _class19.TextAlignType = TextAlignType, _temp8)) || _class18;
+export let Rect = rClass(_class20 = (_temp9 = class Rect extends RabObject {
   constructor(x, y, w, h) {
     super();
     this.x = void 0;
@@ -791,8 +874,8 @@ export let Rect = rClass(_class19 = (_temp9 = class Rect extends RabObject {
     return this.y;
   }
 
-}, _temp9)) || _class19;
-export let Circle = rClass(_class21 = (_temp10 = class Circle extends RabObject {
+}, _temp9)) || _class20;
+export let Circle = rClass(_class22 = (_temp10 = class Circle extends RabObject {
   constructor(x, y, radius) {
     super();
     this.x = void 0;
@@ -822,9 +905,13 @@ export let Circle = rClass(_class21 = (_temp10 = class Circle extends RabObject 
     this.y = pos[1];
   }
 
-}, _temp10)) || _class21;
+}, _temp10)) || _class22;
 ;
-export let GraphicList = rClass(_class23 = (_temp11 = class GraphicList extends GraphicComponent {
+export let GraphicList = rClass(_class24 = (_temp11 = class GraphicList extends GraphicComponent {
+  setGraphics(graphics) {
+    this.graphics = graphics;
+  }
+
   constructor(graphics) {
     super();
     this.graphics = void 0;
@@ -886,26 +973,44 @@ export let GraphicList = rClass(_class23 = (_temp11 = class GraphicList extends 
     }
   }
 
-}, _temp11)) || _class23;
-export let RabImage = rClass(_class25 = (_temp12 = class RabImage extends GraphicComponent {
+}, _temp11)) || _class24;
+export let RabImage = rClass(_class26 = (_temp12 = class RabImage extends GraphicComponent {
+  get imageUrl() {
+    return this._imageUrl;
+  }
+
+  set imageUrl(value) {
+    this._imageUrl = value;
+    this.image = Rabbit.loadImage(value);
+    this.w = this.image.width;
+    this.h = this.image.height;
+  }
+
   constructor(x, y, image) {
     super();
     this._x = void 0;
     this._y = void 0;
     this.alpha = void 0;
+    this._imageUrl = void 0;
     this.image = void 0;
     this.ignoreCamera = false;
-    this._x = x;
-    this._y = y;
-    this.x = x;
-    this.y = y;
+    this._x = x ? x : 0;
+    this._y = y ? y : 0;
+    this.x = x ? x : 0;
+    this.y = y ? y : 0;
     this.alpha = 1;
-    if (!image) throw 'Image not specified.';
-    this.image = Rabbit.loadImage(image);
+    if (image) this.image = Rabbit.loadImage(image);
+  }
+
+  async setImageAsync(url) {
+    this._imageUrl = url;
+    this.image = await Rabbit.loadImageAsync(url);
+    this.w = this.image.width;
+    this.h = this.image.height;
   }
 
   draw() {
-    if (!this.image.valid) return;
+    if (!this.image || !this.image.valid) return;
     Rabbit.Instance.context.save();
     Rabbit.Instance.context.globalAlpha = this.alpha;
     if (this.ignoreCamera) Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));else Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y)); // console.log("camera",Rabbit.Instance.camera);
@@ -931,8 +1036,8 @@ export let RabImage = rClass(_class25 = (_temp12 = class RabImage extends Graphi
     this.h = this.image.height;
   }
 
-}, _temp12)) || _class25;
-export let Sprite = rClass(_class27 = (_temp13 = class Sprite extends GraphicComponent {
+}, _temp12)) || _class26;
+export let Sprite = rClass(_class28 = (_temp13 = class Sprite extends GraphicComponent {
   constructor(x, y, image, frameW, frameH) {
     super();
     this._x = void 0;
@@ -1049,8 +1154,8 @@ export let Sprite = rClass(_class27 = (_temp13 = class Sprite extends GraphicCom
     }
   }
 
-}, _temp13)) || _class27;
-export let Tilemap = rClass(_class29 = (_temp14 = class Tilemap extends GraphicComponent {
+}, _temp13)) || _class28;
+export let Tilemap = rClass(_class30 = (_temp14 = class Tilemap extends GraphicComponent {
   constructor(x, y, image, tw, th, gw, gh, tiles) {
     super();
     this.gridW = void 0;
@@ -1122,8 +1227,8 @@ export let Tilemap = rClass(_class29 = (_temp14 = class Tilemap extends GraphicC
     }
   }
 
-}, _temp14)) || _class29;
-export let Canvas = rClass(_class31 = (_temp15 = class Canvas extends GraphicComponent {
+}, _temp14)) || _class30;
+export let Canvas = rClass(_class32 = (_temp15 = class Canvas extends GraphicComponent {
   constructor(x, y, w, h) {
     super();
     this.alpha = void 0;
@@ -1160,4 +1265,4 @@ export let Canvas = rClass(_class31 = (_temp15 = class Canvas extends GraphicCom
     return c;
   }
 
-}, _temp15)) || _class31; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+}, _temp15)) || _class32; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

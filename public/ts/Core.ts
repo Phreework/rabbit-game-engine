@@ -170,7 +170,25 @@ export class Rabbit {
         this.images[url] = img;
         return img;
     }
-
+    static loadImageAsync(url: string): Promise<HTMLImageElement> {
+        return new Promise((success, fail) => {
+            if (url in this.images) {
+                success(this.images[url]);
+            }
+            const img: HTMLImageElement = new Image();
+            img.src = url;
+            img.onload = () => {
+                (img as any).valid = true;
+                this.images[url] = img;
+                success(img);
+            }
+            img.onerror = () => {
+                (img as any).valid = false;
+                Rabbit.Instance.imageError(img.src);
+                fail();
+            };
+        })
+    }
     static loadAudio(url: string): HTMLAudioElement {
         let channel: HTMLAudioElement = null;
         for (var a = 0; a < this.audioChannels.length; ++a) {
@@ -274,6 +292,7 @@ export class Rabbit {
     run() {
         const dtime: number = 1000 / this.fps;
         this.time = Date.now();
+        this.start();
         this.updateId = setInterval(() => { this.update() }, dtime);
     }
 
@@ -306,12 +325,16 @@ export class Rabbit {
         }
         // console.log("this.world", this.world)
     }
-    stop():boolean {
-        if (this.updateId) clearInterval(this.updateId)
+    stop(): boolean {
+        if (this.updateId) clearInterval(this.updateId);
         else return false;
+        this.world.stop();
         this.updateId = null;
         this.isRabbitRun = false;
         return true;
+    }
+    start() {
+        this.world.start();
     }
     update() {
         var dtime = (Date.now() - this.time) / 1000;
@@ -395,11 +418,13 @@ export class TestComponent extends Component {
 export class Entity extends RabObject {
     x: number;
     y: number;
+    rect: Rect;
     graphic: GraphicComponent;
     type: string;
     world: World;
     name: string;
     id: number;
+    active: boolean = true;
     components: Component[] = [];
 
 
@@ -407,6 +432,7 @@ export class Entity extends RabObject {
         super();
         this.x = x ? x : 0;
         this.y = y ? y : 0;
+        this.rect = new Rect(0, 0, 0, 0);
         this.type = "entity";
         this.world = null;
     }
@@ -429,14 +455,32 @@ export class Entity extends RabObject {
 
     draw() {
         // console.log("进来了draw")
-        if (this.graphic && this.graphic.visible != false)
+        if (this.active && this.graphic && this.graphic.visible != false)
             this.graphic.draw();
     }
 
+    start() {
+        const len: number = this.components.length;
+        if (len == 0) {
+            return;
+        } else {
+            for (let i = 0; i < len; i++) {
+                this.components[i].onLoad();
+                this.components[i].start();
+            }
+        }
+    }
 
 
     update(dtime) {
-
+        const len: number = this.components.length;
+        if (len == 0) {
+            return;
+        } else {
+            for (let i = 0; i < len; i++) {
+                this.components[i].update(dtime);
+            }
+        }
     }
 
     addComponent(className: string): Component;
@@ -447,7 +491,6 @@ export class Entity extends RabObject {
             try {
                 if (rabbitClass[com]) {
                     newCom = new rabbitClass[com].prototype.constructor();
-                    this.components.push(newCom);
                 } else {
                     console.log("不存在此component", com);
                 }
@@ -457,15 +500,19 @@ export class Entity extends RabObject {
         } else {
             try {
                 newCom = new com();
-                this.components.push(newCom);
             } catch (e) {
                 console.error("通过传入类addComponent错误，可能原因为类实现有误");
             }
         }
         if (newCom) {
+            this.components.push(newCom);
             newCom.entity = this;
             if (newCom["draw"]) {
                 this.graphic = newCom as GraphicComponent;
+            }
+            if (Rabbit.Instance.isRabbitRun){
+                newCom.onLoad();
+                newCom.start();
             }
         }
         return newCom as T;
@@ -509,6 +556,15 @@ export class Sfx extends RabObject {
         this.audio.play();
     }
 }
+
+@rClass
+export class AudioSystem extends RabObject {
+
+    static play(soundurl) {
+        const audio = Rabbit.loadAudio(soundurl);
+        audio.play();
+    }
+}
 @rClass
 export class World extends RabObject {
 
@@ -547,8 +603,8 @@ export class World extends RabObject {
                 return lhs.id - rhs.id;
             return lhs.graphic.z - rhs.graphic.z;
         });
-        for (let e = 0; e < this.entities.length; ++e) {
-            this.entities[e].draw();
+        for (let i = 0; i < this.entities.length; ++i) {
+            this.entities[i].draw();
         }
     }
 
@@ -595,15 +651,17 @@ export class World extends RabObject {
     }
 
     _update(dtime) {
-        for (var e = 0; e < this.entities.length; ++e) {
-            if (this.entities[e].graphic)
-                this.entities[e].graphic.update(dtime);
-            this.entities[e].update(dtime);
+        for (let i = 0; i < this.entities.length; ++i) {
+            const entity = this.entities[i];
+            if (!entity.active) continue;
+            entity.update(dtime);
         }
-        for (var r = 0; r < this.removed.length; ++r) {
-            for (var e = 0; e < this.entities.length; ++e) {
-                if (this.entities[e] == this.removed[r])
-                    this.entities.splice(e, 1);
+
+        //可能开销比较大？
+        for (let j = 0; j < this.removed.length; ++j) {
+            for (let i = 0; i < this.entities.length; ++i) {
+                if (this.entities[i] == this.removed[j])
+                    this.entities.splice(i, 1);
             }
         }
         this.removed = [];
@@ -612,7 +670,18 @@ export class World extends RabObject {
     update(dtime) {
         this._update(dtime);
     }
-
+    start() {
+        console.log("start事件总线执行")
+        for (let i = 0; i < this.entities.length; ++i) {
+            const entity = this.entities[i];
+            if (entity.active) entity.start();
+        }
+    }
+    stop() {
+        this.entities = [];
+        this.removed = [];
+        this.maxId = 0;
+    }
     collide(rect) {
         let collisions: Collision[] = [];
         for (let i = 0; i < this.entities.length; i++) {
@@ -811,7 +880,10 @@ export class Circle extends RabObject {
 @rClass
 export class GraphicList extends GraphicComponent {
     graphics: GraphicComponent[];
-    constructor(graphics) {
+    setGraphics(graphics:GraphicComponent[]){
+        this.graphics = graphics;
+    }
+    constructor(graphics?) {
         super();
         this.graphics = graphics || [];
     }
@@ -874,25 +946,38 @@ export class RabImage extends GraphicComponent {
     _x: number;
     _y: number;
     alpha: number;
-    image: HTMLImageElement;
-    ignoreCamera: boolean = false;
-    constructor(x, y, image) {
-        super();
-        this._x = x;
-        this._y = y;
-        this.x = x;
-        this.y = y;
-        this.alpha = 1;
-
-        if (!image)
-            throw 'Image not specified.';
-
-        this.image = Rabbit.loadImage(image);
+    _imageUrl: string;
+    get imageUrl() {
+        return this._imageUrl;
+    }
+    set imageUrl(value: string) {
+        this._imageUrl = value;
+        this.image = Rabbit.loadImage(value);
+        this.w = this.image.width;
+        this.h = this.image.height;
     }
 
+    image: HTMLImageElement;
+    ignoreCamera: boolean = false;
+    constructor(x?: number, y?: number, image?: string) {
+        super();
+        this._x = x ? x : 0;
+        this._y = y ? y : 0;
+        this.x = x ? x : 0;
+        this.y = y ? y : 0;
+        this.alpha = 1;
+        if (image) this.image = Rabbit.loadImage(image);
+    }
+
+    async setImageAsync(url: string) {
+        this._imageUrl = url;
+        this.image = await Rabbit.loadImageAsync(url);
+        this.w = this.image.width;
+        this.h = this.image.height;
+    }
 
     draw() {
-        if (!(this.image as any).valid) return;
+        if (!this.image || !(this.image as any).valid) return;
         Rabbit.Instance.context.save();
         Rabbit.Instance.context.globalAlpha = this.alpha;
         if (this.ignoreCamera)

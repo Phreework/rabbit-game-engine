@@ -1,16 +1,19 @@
-import { Entity, GraphicComponent, GraphicList, Rabbit, RabImage, World } from "../ts/Core.js";
+import { Component, Entity, GraphicComponent, GraphicList, Rabbit, RabImage, World } from "../ts/Core.js";
 const TILE_W = 64;
 const TILE_H = 32;
 
 class IsoTilemap extends GraphicComponent {
-  constructor(x, y, gw, gh, tw, th, image) {
-    super();
+  constructor(...args) {
+    super(...args);
     this.gridW = void 0;
     this.gridH = void 0;
     this.tileW = void 0;
     this.tileH = void 0;
     this.image = void 0;
     this.tiles = void 0;
+  }
+
+  init(x, y, gw, gh, tw, th, image) {
     this.x = x;
     this.y = y;
     this.gridW = gw;
@@ -53,12 +56,17 @@ class IsoTilemap extends GraphicComponent {
 
 }
 
-class Terrain extends Entity {
-  constructor() {
-    super();
+class Terrain extends Component {
+  constructor(...args) {
+    super(...args);
     this.graphic = void 0;
-    let imageUrl = 'graphics/isometric/tiles.png';
-    this.graphic = new IsoTilemap(0, 0, 12, 12, TILE_W, TILE_H, imageUrl);
+  }
+
+  init() {
+    this.graphic = this.entity.addComponent(IsoTilemap);
+    const imageUrl = 'graphics/isometric/tiles.png';
+    this.graphic.init(0, 0, 12, 12, TILE_W, TILE_H, imageUrl);
+    ;
   }
 
   setTile(tx, ty, tile) {
@@ -67,81 +75,114 @@ class Terrain extends Entity {
 
 }
 
-class Town extends Entity {
-  constructor(gx, gy) {
-    super();
+class Town extends Component {
+  constructor(...args) {
+    super(...args);
     this.gridX = void 0;
     this.gridY = void 0;
+  }
+
+  init(gx, gy) {
     this.gridX = gx;
     this.gridY = gy;
-    this.x = (gx - gy) * TILE_W / 2;
-    this.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
-    this.graphic = new RabImage(this.x, this.y, 'graphics/isometric/town.png');
+    this.entity.x = (gx - gy) * TILE_W / 2;
+    this.entity.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
+    const image = this.entity.addComponent(RabImage);
+    image.x = this.entity.x;
+    image.y = this.entity.y;
+    image.imageUrl = 'graphics/isometric/town.png';
   }
 
 }
 
-class Unit extends Entity {
-  constructor(gx, gy, banner) {
-    super();
+class Unit extends Component {
+  constructor(...args) {
+    super(...args);
     this.gridX = void 0;
     this.gridY = void 0;
     this.image = void 0;
     this.banner = void 0;
+  }
+
+  init(gx, gy, banner) {
     this.gridX = gx;
     this.gridY = gy;
-    this.x = (gx - gy) * TILE_W / 2 + 16;
-    this.y = (gx + gy) * TILE_H / 2 - 32;
-    this.image = new RabImage(this.x, this.y, 'graphics/isometric/warchap.png');
-    this.banner = new RabImage(this.x, this.y, 'graphics/isometric/' + banner + '.png');
-    this.graphic = new GraphicList([this.banner, this.image]);
+    this.entity.x = (gx - gy) * TILE_W / 2 + 16;
+    this.entity.y = (gx + gy) * TILE_H / 2 - 32;
+    const imageEntity = new Entity();
+    this.image = imageEntity.addComponent(RabImage);
+    this.image.x = this.entity.x;
+    this.image.y = this.entity.y;
+    this.image.imageUrl = 'graphics/isometric/warchap.png';
+    const bannerEntity = new Entity();
+    this.banner = bannerEntity.addComponent(RabImage);
+    this.banner.x = this.entity.x;
+    this.banner.y = this.entity.y;
+    this.banner.imageUrl = 'graphics/isometric/' + banner + '.png';
+    const list = this.entity.addComponent(GraphicList);
+    list.setGraphics([this.banner, this.image]);
   }
 
 }
 
-class IsoWorld extends World {
-  constructor(name) {
-    super(name);
-    this.terrain = void 0;
-    this.terrain = new Terrain();
-    this.add(this.terrain);
-  }
-
-}
-
-class City extends Entity {
-  constructor(gx, gy) {
-    super();
+class City extends Component {
+  constructor(...args) {
+    super(...args);
     this.gridX = void 0;
     this.gridY = void 0;
     this.image = void 0;
+  }
+
+  init(gx, gy) {
     this.gridX = gx;
     this.gridY = gy;
     let width = 128;
     let height = 80;
-    this.x = (gx - gy) * TILE_W / 2 - width / 2 + TILE_W / 2;
-    this.y = (gx + gy) * TILE_H / 2 - height + TILE_H * 2;
-    this.image = new RabImage(this.x, this.y, 'graphics/isometric/city.png');
-    this.graphic = this.image;
+    this.entity.x = (gx - gy) * TILE_W / 2 - width / 2 + TILE_W / 2;
+    this.entity.y = (gx + gy) * TILE_H / 2 - height + TILE_H * 2;
+    this.image = this.entity.addComponent(RabImage);
+    this.image.imageUrl = 'graphics/isometric/city.png';
+    this.image.x = this.entity.x;
+    this.image.y = this.entity.y;
   }
 
 }
 
 export function main() {
-  const world = new IsoWorld("demo3");
+  const world = new World("demo3");
 
   world.init = () => {
+    console.log("执行");
     Rabbit.Instance.camera = {
       x: 12 * TILE_W / 2,
       y: 0
     };
-    world.terrain.setTile(0, 5, 0);
-    world.add(new Town(0, 5));
-    world.add(new Unit(0, 5, 'banner_red'));
-    world.terrain.setTile(11, 6, 0);
-    world.add(new Town(11, 6));
-    world.add(new Unit(11, 6, 'banner_blue'));
-    world.add(new City(0, 0));
+    const terrainNode = new Entity();
+    const terrain = terrainNode.addComponent(Terrain);
+    terrain.init();
+    terrain.setTile(0, 5, 0);
+    world.add(terrainNode);
+    const townNode1 = new Entity();
+    const town1 = townNode1.addComponent(Town);
+    town1.init(0, 5);
+    world.add(townNode1);
+    const unitNode1 = new Entity();
+    const unit1 = unitNode1.addComponent(Unit);
+    unit1.init(0, 5, 'banner_red');
+    world.add(unitNode1);
+    terrain.setTile(11, 6, 0);
+    const townNode2 = new Entity();
+    const town2 = townNode2.addComponent(Town);
+    town2.init(11, 6);
+    world.add(townNode2);
+    const unitNode2 = new Entity();
+    const unit2 = unitNode2.addComponent(Unit);
+    unit2.init(11, 6, 'banner_blue');
+    world.add(unitNode2);
+    const cityNode = new Entity();
+    const city = cityNode.addComponent(City);
+    city.init(0, 0);
+    world.add(cityNode);
   };
 
   return world;

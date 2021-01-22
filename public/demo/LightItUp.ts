@@ -1,5 +1,5 @@
-import { Entity, Circle, Canvas, Sfx, Rabbit, World } from "../ts/Core.js";
-class Light extends Entity {
+import { Entity, Circle, Canvas, Sfx, Rabbit, World, Component, AudioSystem } from "../ts/Core.js";
+class Light extends Component {
     gx: any;
     gy: any;
     radius: any;
@@ -8,8 +8,8 @@ class Light extends Entity {
     circle: Circle;
     dark: Canvas;
     light: Canvas;
-    constructor(gx, gy, radius, board) {
-        super();
+
+    init(gx, gy, radius, board){
         this.gx = gx;
         this.gy = gy;
         let x = gx * (radius * 2 + 1);
@@ -29,37 +29,40 @@ class Light extends Entity {
         this.light.context.arc(radius, radius, this.radius, 0, 360);
         this.light.context.fill();
 
-        this.graphic = this.dark;
+        this.entity.graphic = this.dark;
+    }
+    onLoad() {
+        this.entity.mouseDown = () => {
+            console.log("点击棋子");
+            if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y]))
+                this.board.light(this.gx, this.gy);
+        }
+    }
 
-    }
-    mouseDown() {
-        super.mouseDown();
-        console.log("点击棋子");
-        if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y]))
-            this.board.light(this.gx, this.gy);
-    }
     flip() {
         this.lit = !this.lit;
     }
 
     update(dtime) {
         if (this.lit)
-            this.graphic = this.light;
+            this.entity.graphic = this.light;
         else
-            this.graphic = this.dark;
+            this.entity.graphic = this.dark;
     }
 }
 
-class Board extends Entity {
+class Board extends Component {
     lights: Light[];
-    constructor() {
-        super();
+    onLoad() {
+        console.log("board start");
         this.lights = [];
         for (let y = 0; y < 5; ++y) {
             for (let x = 0; x < 5; ++x) {
-                const l: Light = new Light(x, y, 32, this);
-                this.lights.push(l);
-                Rabbit.Instance.world.add(l);
+                const lightEntity = new Entity();
+                const light = lightEntity.addComponent(Light);
+                light.init(x, y, 32, this);
+                this.lights.push(light);
+                Rabbit.Instance.world.add(lightEntity);
             }
         }
         for (let i = 0; i < 8; ++i) {
@@ -83,7 +86,7 @@ class Board extends Entity {
             const item = this.lights[i];
             if (!item.lit) return;
         }
-        new Sfx("audio/bell.ogg").play();
+        AudioSystem.play("audio/bell.ogg");
         alert("Victory!");
     }
 }
@@ -91,7 +94,9 @@ class Board extends Entity {
 export function main(): World {
     const world = new World("demo4");
     world.init = () => {
-        world.add(new Board());
+        const boardEntity = new Entity();
+        boardEntity.addComponent(Board);
+        world.add(boardEntity);
     };
     return world;
 }
