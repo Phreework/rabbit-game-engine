@@ -437,9 +437,9 @@ export class Entity extends RabObject {
         this.world = null;
     }
 
-    keyDown(key) { };
+    keyDown(key:number) { };
 
-    keyUp(key) { };
+    keyUp(key:number) { };
 
     mouseDown() { };
 
@@ -510,7 +510,7 @@ export class Entity extends RabObject {
             if (newCom["draw"]) {
                 this.graphic = newCom as GraphicComponent;
             }
-            if (Rabbit.Instance.isRabbitRun){
+            if (Rabbit.Instance.isRabbitRun) {
                 newCom.onLoad();
                 newCom.start();
             }
@@ -627,13 +627,13 @@ export class World extends RabObject {
         return this.filter((e) => { return e.type == type; });
     }
 
-    keyDown(key) {
+    keyDown(key: number) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
             this.entities[e].keyDown(key);
         }
     }
 
-    keyUp(key) {
+    keyUp(key: number) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
             this.entities[e].keyUp(key);
         }
@@ -880,7 +880,7 @@ export class Circle extends RabObject {
 @rClass
 export class GraphicList extends GraphicComponent {
     graphics: GraphicComponent[];
-    setGraphics(graphics:GraphicComponent[]){
+    setGraphics(graphics: GraphicComponent[]) {
         this.graphics = graphics;
     }
     constructor(graphics?) {

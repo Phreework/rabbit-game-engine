@@ -1,4 +1,4 @@
-import { Entity, Rabbit, Text, World } from "../ts/Core.js";
+import { Entity, Rabbit, RabKeyType, Text, World } from "../ts/Core.js";
 import { main as demo2 } from "./EffectButton.js";
 import { main as demo3 } from "./IsoGame.js";
 import { main as demo4 } from "./LightItUp.js";
@@ -25,6 +25,7 @@ export class TestDemo {
     rabbit.runWorld(demos[0].name);
 
     rabbit.keyDown = key => {
+      if (key.keyCode != RabKeyType.DOWN) return;
       this.demoInd++;
       this.demoInd = this.demoInd < demos.length ? this.demoInd : 0;
       rabbit.runWorld(demos[this.demoInd].name);
