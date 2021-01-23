@@ -9,7 +9,7 @@
  * Rabbit 引擎的核心代码 
  * 主要作者：PhreeSoda
  * 代码仓库：https://github.com/Phreework/rabbit-game-engine
- * 描述：rabbit 引擎是一个极易上手并且性能强劲的H5游戏引擎，具有 实体-组件-管线 的特色开发架构。
+ * 描述：rabbit 引擎是一个极易上手且功能强大的H5游戏引擎，具有 实体-组件-管线 的特色开发架构。
  * --------------------------------------------------------
 */
 
@@ -82,7 +82,7 @@ export enum KeyType {
 @rClass
 export class Rabbit {
 
-    static Instance: Rabbit = null;
+    public static Instance: Rabbit = null;
     get winSize() {
         return new Rect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -107,9 +107,18 @@ export class Rabbit {
     worldMap: Map<string, World> = new Map();
     isRabbitRun: boolean = false;
     updateId: any = null;
+
+    entitySystem:EntitySystem;
+    compSystem:CompSystem;
+    eventSystem:EventSystem;
     constructor() {
-        if (!Rabbit.Instance)
+        if (!Rabbit.Instance) {
             Rabbit.Instance = this;
+            rabbit = Rabbit.Instance;
+            this.entitySystem = new EntitySystem();
+            this.compSystem = new CompSystem();
+            this.eventSystem = new EventSystem();
+        }
     }
     /**
      * 初始化游戏
@@ -351,14 +360,41 @@ export class Rabbit {
         }
     }
 }
+export let rabbit: Rabbit = null;
 
+
+/**
+ * 管理所有的实体
+ * 单例
+ */
+@rClass
+export class EntitySystem {
+    static Instance:EntitySystem;
+    constructor(){
+        EntitySystem.Instance = this;
+    }
+}
+/**
+ * 管理所有的组件
+ * 单例
+ */
+@rClass
+export class CompSystem {
+    static Instance:CompSystem;
+    constructor(){
+        CompSystem.Instance = this;
+    }
+}
 /**
  * 管理所有的事件
  * 单例
  */
 @rClass
-export class EventSystem{
-
+export class EventSystem {
+    static Instance:EventSystem;
+    constructor(){
+        EventSystem.Instance = this;
+    }
 }
 @rClass
 export class RabObject {
@@ -584,13 +620,15 @@ export class World extends RabObject {
     entities: Entity[] = [];
     removed: Entity[] = [];
     maxId: number = 0;
-
+    entitySystem:EntitySystem = Rabbit.Instance.entitySystem;
+    compSystem:CompSystem = Rabbit.Instance.compSystem;
     init: () => void;
     /**
      * 在世界中增加实体
      * @param e 要增加的实体
      */
     add(e: Entity) {
+        // this.entitySystem.add(e);
         this.entities.push(e);
         e.id = this.maxId++;
         e.world = this;

@@ -2,7 +2,7 @@
 
 > a simple, easy and lite h5 game engine
 ## 项目简介
-Rabbit Game Engine是一款轻便，易用的H5游戏引擎，使用TypeScript语言编写，完全遵循Nodejs项目结构。我的目标是使其能轻松嵌入主流前端开发框架，如Vue，React，帮助前端程序开发者迅速开发嵌入前端项目的游戏应用。
+Rabbit Game Engine是一款轻便，易用的H5游戏引擎，使用TypeScript语言编写，完全遵循Nodejs项目结构，拥有完整的Entity-Component架构。我的目标是使其能轻松嵌入主流前端开发框架，如Vue，React，帮助前端程序开发者迅速开发嵌入前端项目的游戏应用。
 ## 路线图
 
 第一阶段 - rabbit.core.js 开发包
