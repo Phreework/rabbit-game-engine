@@ -1,13 +1,27 @@
-import { Entity, Rabbit, RabKeyType, Text, World } from "../ts/Core.js";
+import { Entity, Rabbit, KeyType, Text, World, Component } from "../ts/Core.js";
 import { main as demo2 } from "./EffectButton.js";
 import { main as demo3 } from "./IsoGame.js";
 import { main as demo4 } from "./LightItUp.js";
+import { main as demo5 } from "./QuestGame.js";
 /**
  * 引擎完整功能测试Demo
  * @author PhreeSoda
  */
 
 export class TestDemo {
+  static nextWorld() {
+    this.demoInd++;
+    this.demoInd = this.demoInd < this.demos.length ? this.demoInd : 0;
+    Rabbit.Instance.runWorld(this.demos[this.demoInd].name);
+    TestDemo.addControlEntity();
+  }
+
+  static addControlEntity() {
+    const controlEntity = new Entity();
+    controlEntity.addComponent(GlobalControl);
+    Rabbit.Instance.world.add(controlEntity);
+  }
+
   static main() {
     const rabbit = new Rabbit();
     rabbit.init();
@@ -16,6 +30,8 @@ export class TestDemo {
     demos.push(this.demo1());
     demos.push(demo3());
     demos.push(demo4());
+    demos.push(demo5());
+    this.demos = demos;
 
     for (let i = 0; i < demos.length; i++) {
       const world = demos[i];
@@ -23,13 +39,7 @@ export class TestDemo {
     }
 
     rabbit.runWorld(demos[0].name);
-
-    rabbit.keyDown = key => {
-      if (key.keyCode != RabKeyType.DOWN) return;
-      this.demoInd++;
-      this.demoInd = this.demoInd < demos.length ? this.demoInd : 0;
-      rabbit.runWorld(demos[this.demoInd].name);
-    };
+    TestDemo.addControlEntity();
   }
 
   static demo1() {
@@ -54,3 +64,16 @@ export class TestDemo {
 
 }
 TestDemo.demoInd = 0;
+TestDemo.demos = void 0;
+
+class GlobalControl extends Component {
+  keyDown(key) {
+    if (key != KeyType.DOWN) return;
+    TestDemo.nextWorld();
+  }
+
+  start() {
+    this.entity.keyDown = this.keyDown;
+  }
+
+}

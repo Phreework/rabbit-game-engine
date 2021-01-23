@@ -26,7 +26,7 @@ export const rabbitClass = {};
  * ###zh
  * 键盘按键枚举（需补齐其他不常用键）
  */
-export enum RabKeyType {
+export enum KeyType {
     A = 65,
     B = 66,
     C = 67,
@@ -235,7 +235,7 @@ export class Rabbit {
      * @param event 
      */
     keyDown(event: KeyboardEvent): void {
-        console.log("event", event);
+        // console.log("event", event);
         if (this.keysPressed[event.keyCode]) return;
         this.keysPressed[event.keyCode] = true;
         this.world.keyDown(event.keyCode);
@@ -370,9 +370,13 @@ export class RabObject {
 }
 @rClass
 export class Component extends RabObject {
+
     entity: Entity;
     enabled: boolean;
-
+    _onLoad() {
+        this.onLoad();
+        this.start();
+    }
     onLoad() {
 
     }
@@ -426,7 +430,7 @@ export class Entity extends RabObject {
     id: number;
     active: boolean = true;
     components: Component[] = [];
-
+    children: Entity[] = [];
 
     constructor(x?, y?) {
         super();
@@ -437,9 +441,9 @@ export class Entity extends RabObject {
         this.world = null;
     }
 
-    keyDown(key:number) { };
+    keyDown(key: number) { };
 
-    keyUp(key:number) { };
+    keyUp(key: number) { };
 
     mouseDown() { };
 
@@ -461,25 +465,19 @@ export class Entity extends RabObject {
 
     start() {
         const len: number = this.components.length;
-        if (len == 0) {
-            return;
-        } else {
-            for (let i = 0; i < len; i++) {
-                this.components[i].onLoad();
-                this.components[i].start();
-            }
+        if (len == 0) return;
+        for (let i = 0; i < len; i++) {
+            this.components[i]._onLoad();
         }
     }
 
 
+
     update(dtime) {
         const len: number = this.components.length;
-        if (len == 0) {
-            return;
-        } else {
-            for (let i = 0; i < len; i++) {
-                this.components[i].update(dtime);
-            }
+        if (len == 0) return;
+        for (let i = 0; i < len; i++) {
+            this.components[i].update(dtime);
         }
     }
 
@@ -511,8 +509,7 @@ export class Entity extends RabObject {
                 this.graphic = newCom as GraphicComponent;
             }
             if (Rabbit.Instance.isRabbitRun) {
-                newCom.onLoad();
-                newCom.start();
+                newCom._onLoad();
             }
         }
         return newCom as T;
@@ -629,19 +626,19 @@ export class World extends RabObject {
 
     keyDown(key: number) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            this.entities[e].keyDown(key);
+            if (this.entities[e]) this.entities[e].keyDown(key);
         }
     }
 
     keyUp(key: number) {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            this.entities[e].keyUp(key);
+            if (this.entities[e]) this.entities[e].keyUp(key);
         }
     }
 
     mouseDown() {
         for (let e = this.entities.length - 1; e >= 0; --e) {
-            this.entities[e].mouseDown();
+            if (this.entities[e]) this.entities[e].mouseDown();
         }
     }
 
@@ -943,6 +940,7 @@ export class GraphicList extends GraphicComponent {
 }
 @rClass
 export class RabImage extends GraphicComponent {
+
     _x: number;
     _y: number;
     alpha: number;
@@ -968,7 +966,10 @@ export class RabImage extends GraphicComponent {
         this.alpha = 1;
         if (image) this.image = Rabbit.loadImage(image);
     }
-
+    setPosition(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
     async setImageAsync(url: string) {
         this._imageUrl = url;
         this.image = await Rabbit.loadImageAsync(url);
@@ -1138,6 +1139,9 @@ export class Sprite extends GraphicComponent {
         }
     }
 }
+/**
+ * 需要重构
+ */
 @rClass
 export class Tilemap extends GraphicComponent {
     gridW: number;
@@ -1169,7 +1173,6 @@ export class Tilemap extends GraphicComponent {
 
     build() {
         this.canvas = new Canvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
-        //this.canvas = rabbit.Canvas.createRect(0, 0, tw*gw, th*gh, 'white') ;
 
         for (var y = 0; y < this.gridH; ++y) {
             for (var x = 0; x < this.gridW; ++x) {
@@ -1253,12 +1256,5 @@ export class Canvas extends GraphicComponent {
     update(dtime) {
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     }
-
-    createRect(x, y, w, h, colour) {
-        var c = new Canvas(x, y, w, h);
-        c.context.fillStyle = colour;
-        c.context.fillRect(0, 0, w, h);
-        return c;
-    };
 }
 // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

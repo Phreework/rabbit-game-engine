@@ -27,7 +27,7 @@ export const rabbitClass = {};
  * 键盘按键枚举（需补齐其他不常用键）
  */
 
-export let RabKeyType;
+export let KeyType;
 /**
  * ###en
  * 
@@ -35,49 +35,49 @@ export let RabKeyType;
  * 游戏实例
  */
 
-(function (RabKeyType) {
-  RabKeyType[RabKeyType["A"] = 65] = "A";
-  RabKeyType[RabKeyType["B"] = 66] = "B";
-  RabKeyType[RabKeyType["C"] = 67] = "C";
-  RabKeyType[RabKeyType["D"] = 68] = "D";
-  RabKeyType[RabKeyType["E"] = 69] = "E";
-  RabKeyType[RabKeyType["F"] = 70] = "F";
-  RabKeyType[RabKeyType["G"] = 71] = "G";
-  RabKeyType[RabKeyType["H"] = 72] = "H";
-  RabKeyType[RabKeyType["I"] = 73] = "I";
-  RabKeyType[RabKeyType["J"] = 74] = "J";
-  RabKeyType[RabKeyType["K"] = 75] = "K";
-  RabKeyType[RabKeyType["L"] = 76] = "L";
-  RabKeyType[RabKeyType["M"] = 77] = "M";
-  RabKeyType[RabKeyType["N"] = 78] = "N";
-  RabKeyType[RabKeyType["O"] = 79] = "O";
-  RabKeyType[RabKeyType["P"] = 80] = "P";
-  RabKeyType[RabKeyType["Q"] = 81] = "Q";
-  RabKeyType[RabKeyType["R"] = 82] = "R";
-  RabKeyType[RabKeyType["S"] = 83] = "S";
-  RabKeyType[RabKeyType["T"] = 84] = "T";
-  RabKeyType[RabKeyType["U"] = 85] = "U";
-  RabKeyType[RabKeyType["V"] = 86] = "V";
-  RabKeyType[RabKeyType["W"] = 87] = "W";
-  RabKeyType[RabKeyType["X"] = 88] = "X";
-  RabKeyType[RabKeyType["Y"] = 89] = "Y";
-  RabKeyType[RabKeyType["Z"] = 90] = "Z";
-  RabKeyType[RabKeyType["ZERO"] = 48] = "ZERO";
-  RabKeyType[RabKeyType["ONE"] = 49] = "ONE";
-  RabKeyType[RabKeyType["TWO"] = 50] = "TWO";
-  RabKeyType[RabKeyType["THREE"] = 51] = "THREE";
-  RabKeyType[RabKeyType["FOUR"] = 52] = "FOUR";
-  RabKeyType[RabKeyType["FIVE"] = 53] = "FIVE";
-  RabKeyType[RabKeyType["SIX"] = 54] = "SIX";
-  RabKeyType[RabKeyType["SEVEN"] = 55] = "SEVEN";
-  RabKeyType[RabKeyType["EIGHT"] = 56] = "EIGHT";
-  RabKeyType[RabKeyType["NINE"] = 57] = "NINE";
-  RabKeyType[RabKeyType["LEFT"] = 37] = "LEFT";
-  RabKeyType[RabKeyType["UP"] = 38] = "UP";
-  RabKeyType[RabKeyType["RIGHT"] = 39] = "RIGHT";
-  RabKeyType[RabKeyType["DOWN"] = 40] = "DOWN";
-  RabKeyType[RabKeyType["SPACE"] = 32] = "SPACE";
-})(RabKeyType || (RabKeyType = {}));
+(function (KeyType) {
+  KeyType[KeyType["A"] = 65] = "A";
+  KeyType[KeyType["B"] = 66] = "B";
+  KeyType[KeyType["C"] = 67] = "C";
+  KeyType[KeyType["D"] = 68] = "D";
+  KeyType[KeyType["E"] = 69] = "E";
+  KeyType[KeyType["F"] = 70] = "F";
+  KeyType[KeyType["G"] = 71] = "G";
+  KeyType[KeyType["H"] = 72] = "H";
+  KeyType[KeyType["I"] = 73] = "I";
+  KeyType[KeyType["J"] = 74] = "J";
+  KeyType[KeyType["K"] = 75] = "K";
+  KeyType[KeyType["L"] = 76] = "L";
+  KeyType[KeyType["M"] = 77] = "M";
+  KeyType[KeyType["N"] = 78] = "N";
+  KeyType[KeyType["O"] = 79] = "O";
+  KeyType[KeyType["P"] = 80] = "P";
+  KeyType[KeyType["Q"] = 81] = "Q";
+  KeyType[KeyType["R"] = 82] = "R";
+  KeyType[KeyType["S"] = 83] = "S";
+  KeyType[KeyType["T"] = 84] = "T";
+  KeyType[KeyType["U"] = 85] = "U";
+  KeyType[KeyType["V"] = 86] = "V";
+  KeyType[KeyType["W"] = 87] = "W";
+  KeyType[KeyType["X"] = 88] = "X";
+  KeyType[KeyType["Y"] = 89] = "Y";
+  KeyType[KeyType["Z"] = 90] = "Z";
+  KeyType[KeyType["ZERO"] = 48] = "ZERO";
+  KeyType[KeyType["ONE"] = 49] = "ONE";
+  KeyType[KeyType["TWO"] = 50] = "TWO";
+  KeyType[KeyType["THREE"] = 51] = "THREE";
+  KeyType[KeyType["FOUR"] = 52] = "FOUR";
+  KeyType[KeyType["FIVE"] = 53] = "FIVE";
+  KeyType[KeyType["SIX"] = 54] = "SIX";
+  KeyType[KeyType["SEVEN"] = 55] = "SEVEN";
+  KeyType[KeyType["EIGHT"] = 56] = "EIGHT";
+  KeyType[KeyType["NINE"] = 57] = "NINE";
+  KeyType[KeyType["LEFT"] = 37] = "LEFT";
+  KeyType[KeyType["UP"] = 38] = "UP";
+  KeyType[KeyType["RIGHT"] = 39] = "RIGHT";
+  KeyType[KeyType["DOWN"] = 40] = "DOWN";
+  KeyType[KeyType["SPACE"] = 32] = "SPACE";
+})(KeyType || (KeyType = {}));
 
 export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
   get winSize() {
@@ -269,7 +269,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
 
   keyDown(event) {
-    console.log("event", event);
+    // console.log("event", event);
     if (this.keysPressed[event.keyCode]) return;
     this.keysPressed[event.keyCode] = true;
     this.world.keyDown(event.keyCode);
@@ -662,19 +662,19 @@ export let World = rClass(_class12 = (_temp5 = class World extends RabObject {
 
   keyDown(key) {
     for (let e = this.entities.length - 1; e >= 0; --e) {
-      this.entities[e].keyDown(key);
+      if (this.entities[e]) this.entities[e].keyDown(key);
     }
   }
 
   keyUp(key) {
     for (let e = this.entities.length - 1; e >= 0; --e) {
-      this.entities[e].keyUp(key);
+      if (this.entities[e]) this.entities[e].keyUp(key);
     }
   }
 
   mouseDown() {
     for (let e = this.entities.length - 1; e >= 0; --e) {
-      this.entities[e].mouseDown();
+      if (this.entities[e]) this.entities[e].mouseDown();
     }
   }
 
@@ -1002,6 +1002,11 @@ export let RabImage = rClass(_class26 = (_temp12 = class RabImage extends Graphi
     if (image) this.image = Rabbit.loadImage(image);
   }
 
+  setPosition(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
   async setImageAsync(url) {
     this._imageUrl = url;
     this.image = await Rabbit.loadImageAsync(url);
@@ -1155,6 +1160,10 @@ export let Sprite = rClass(_class28 = (_temp13 = class Sprite extends GraphicCom
   }
 
 }, _temp13)) || _class28;
+/**
+ * 需要重构
+ */
+
 export let Tilemap = rClass(_class30 = (_temp14 = class Tilemap extends GraphicComponent {
   constructor(x, y, image, tw, th, gw, gh, tiles) {
     super();
@@ -1183,7 +1192,7 @@ export let Tilemap = rClass(_class30 = (_temp14 = class Tilemap extends GraphicC
   }
 
   build() {
-    this.canvas = new Canvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH); //this.canvas = rabbit.Canvas.createRect(0, 0, tw*gw, th*gh, 'white') ;
+    this.canvas = new Canvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
 
     for (var y = 0; y < this.gridH; ++y) {
       for (var x = 0; x < this.gridW; ++x) {
@@ -1256,13 +1265,6 @@ export let Canvas = rClass(_class32 = (_temp15 = class Canvas extends GraphicCom
 
   update(dtime) {
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
-  }
-
-  createRect(x, y, w, h, colour) {
-    var c = new Canvas(x, y, w, h);
-    c.context.fillStyle = colour;
-    c.context.fillRect(0, 0, w, h);
-    return c;
   }
 
 }, _temp15)) || _class32; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
