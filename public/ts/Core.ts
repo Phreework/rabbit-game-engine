@@ -108,9 +108,9 @@ export class Rabbit {
     isRabbitRun: boolean = false;
     updateId: any = null;
 
-    entitySystem:EntitySystem;
-    compSystem:CompSystem;
-    eventSystem:EventSystem;
+    entitySystem: EntitySystem;
+    compSystem: CompSystem;
+    eventSystem: EventSystem;
     constructor() {
         if (!Rabbit.Instance) {
             Rabbit.Instance = this;
@@ -369,9 +369,37 @@ export let rabbit: Rabbit = null;
  */
 @rClass
 export class EntitySystem {
-    static Instance:EntitySystem;
-    constructor(){
+    remove(e: Entity) {
+        e.removed();
+        Rabbit.Instance.world.removed.push(e);
+    }
+
+
+    static Instance: EntitySystem;
+    constructor() {
         EntitySystem.Instance = this;
+    }
+    add(e: Entity) {
+        const world = Rabbit.Instance.world;
+        world.entities.push(e);
+        e.id = world.maxId++;
+        e.world = world;
+        e.added();
+    }
+    draw() {
+        const entities = Rabbit.Instance.world.entities;
+        entities.sort((lhs, rhs) => {
+            if (!lhs.graphic)
+                return -1;
+            if (!rhs.graphic)
+                return 1;
+            if (lhs.graphic.z == rhs.graphic.z)
+                return lhs.id - rhs.id;
+            return lhs.graphic.z - rhs.graphic.z;
+        });
+        for (let i = 0; i < entities.length; ++i) {
+            entities[i].draw();
+        }
     }
 }
 /**
@@ -380,8 +408,8 @@ export class EntitySystem {
  */
 @rClass
 export class CompSystem {
-    static Instance:CompSystem;
-    constructor(){
+    static Instance: CompSystem;
+    constructor() {
         CompSystem.Instance = this;
     }
 }
@@ -391,8 +419,26 @@ export class CompSystem {
  */
 @rClass
 export class EventSystem {
-    static Instance:EventSystem;
-    constructor(){
+    keyDown(key: number) {
+        const entities = Rabbit.Instance.world.entities;
+        for (let i = entities.length - 1; i >= 0; --i) {
+            if (entities[i]) entities[i].keyDown(key);
+        }
+    }
+    keyUp(key: number) {
+        const entities = Rabbit.Instance.world.entities;
+        for (let i = entities.length - 1; i >= 0; --i) {
+            if (entities[i]) entities[i].keyUp(key);
+        }
+    }
+    mouseDown() {
+        const entities = Rabbit.Instance.world.entities;
+        for (let i = entities.length - 1; i >= 0; --i) {
+            if (entities[i]) entities[i].mouseDown();
+        }
+    }
+    static Instance: EventSystem;
+    constructor() {
         EventSystem.Instance = this;
     }
 }
@@ -611,46 +657,43 @@ export class AudioSystem extends RabObject {
 @rClass
 export class World extends RabObject {
 
+    name: string;
+    entities: Entity[] = [];
+    removed: Entity[] = [];
+    maxId: number = 0;
+
+    entitySystem: EntitySystem = Rabbit.Instance.entitySystem;
+    eventSystem: EventSystem = Rabbit.Instance.eventSystem;
+
     constructor(name: string) {
         super();
         this.name = name;
     }
 
-    name: string;
-    entities: Entity[] = [];
-    removed: Entity[] = [];
-    maxId: number = 0;
-    entitySystem:EntitySystem = Rabbit.Instance.entitySystem;
-    compSystem:CompSystem = Rabbit.Instance.compSystem;
+    /**
+     * 世界初始化方法，应在其中做Entity实例化等场景构建操作
+     */
     init: () => void;
+
     /**
      * 在世界中增加实体
      * @param e 要增加的实体
      */
     add(e: Entity) {
-        // this.entitySystem.add(e);
-        this.entities.push(e);
-        e.id = this.maxId++;
-        e.world = this;
-        e.added();
+        this.entitySystem.add(e);
     }
-
+    /**
+     * 在世界中移除实体
+     * @param e 要移除的实体
+     */
+    remove(e: Entity) {
+        this.entitySystem.remove(e);
+    }
     /**
      * 排序并派发世界中所有有渲染组件的实体执行渲染任务
      */
     draw() {
-        this.entities.sort((lhs, rhs) => {
-            if (!lhs.graphic)
-                return -1;
-            if (!rhs.graphic)
-                return 1;
-            if (lhs.graphic.z == rhs.graphic.z)
-                return lhs.id - rhs.id;
-            return lhs.graphic.z - rhs.graphic.z;
-        });
-        for (let i = 0; i < this.entities.length; ++i) {
-            this.entities[i].draw();
-        }
+        this.entitySystem.draw();
     }
 
     /**
@@ -673,27 +716,18 @@ export class World extends RabObject {
     }
 
     keyDown(key: number) {
-        for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e]) this.entities[e].keyDown(key);
-        }
+        this.eventSystem.keyDown(key);
     }
 
     keyUp(key: number) {
-        for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e]) this.entities[e].keyUp(key);
-        }
+        this.eventSystem.keyUp(key);
     }
 
     mouseDown() {
-        for (let e = this.entities.length - 1; e >= 0; --e) {
-            if (this.entities[e]) this.entities[e].mouseDown();
-        }
+        this.eventSystem.mouseDown();
     }
 
-    remove(e) {
-        e.removed();
-        this.removed.push(e);
-    }
+
 
     _update(dtime) {
         for (let i = 0; i < this.entities.length; ++i) {
