@@ -351,8 +351,18 @@ export class Rabbit {
         }
     }
 }
+
+/**
+ * 管理所有的事件
+ * 单例
+ */
+@rClass
+export class EventSystem{
+
+}
 @rClass
 export class RabObject {
+
     clone() {
         let f = function () { };
         f.prototype = this;
