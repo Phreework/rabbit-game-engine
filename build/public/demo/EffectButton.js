@@ -30,9 +30,13 @@ export function main() {
 
   world.init = () => {
     const entity = new Entity();
+    entity.setPosition(100, 200);
     const image = entity.addComponent(RabImage);
+    image.visible = false;
     image.setImageAsync("graphics/audio_test.png").then(() => {
-      entity.rect = new Rect(0, 0, image.w, image.h);
+      image.visible = true;
+      entity.rect.w = image.w;
+      entity.rect.h = image.h;
     });
 
     entity.mouseDown = () => {

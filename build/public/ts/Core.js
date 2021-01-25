@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _class18, _temp8, _class20, _temp9, _class22, _temp10, _class24, _class25, _temp11, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _class22, _temp10, _class24, _temp11, _class26, _temp12, _class28, _class29, _temp13, _class30, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44;
 
 /** 
  * --------------------------------------------------------
@@ -659,42 +659,49 @@ export let Component = rClass(_class10 = (_temp5 = class Component extends RabOb
 
 }, _temp5)) || _class10;
 export let TestComponent = rClass(_class12 = class TestComponent extends Component {}) || _class12;
-export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
+export let Vec2 = rClass(_class13 = (_temp6 = class Vec2 {
+  constructor() {
+    this.x = void 0;
+    this.y = void 0;
+  }
+
+}, _temp6)) || _class13;
+export let Vec3 = rClass(_class15 = (_temp7 = class Vec3 {
+  constructor() {
+    this.x = void 0;
+    this.y = void 0;
+    this.z = void 0;
+  }
+
+}, _temp7)) || _class15;
+export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
   /**
-   * 实体的x坐标
+   * 实体的相对x坐标
+   */
+  set x(value) {
+    this.setPosition(value);
+  }
+
+  get x() {
+    return this._x;
+  }
+  /**
+   * 实体的相对y坐标
    */
 
+
+  set y(value) {
+    this.setPosition(this._x, value);
+  }
+
+  get y() {
+    return this._y;
+  }
   /**
-   * 实体的y坐标
+   * 实体的绝对x坐标
    */
 
-  /**
-   * 实体的盒子
-   */
 
-  /**
-   * 实体的渲染组件
-   */
-
-  /**
-   * 实体的类型字符串
-   */
-
-  /**
-   * 实体所属场景
-   */
-
-  /**
-   * 实体的名称
-   */
-
-  /**
-   * 实体的id
-   */
-
-  /**
-   * 实体是否激活
-   */
   get active() {
     return this._active;
   }
@@ -724,8 +731,10 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
 
   constructor(name, x, y) {
     super();
-    this.x = void 0;
-    this.y = void 0;
+    this._x = void 0;
+    this._y = void 0;
+    this.absX = void 0;
+    this.absY = void 0;
     this.rect = void 0;
     this.graphic = void 0;
     this.type = void 0;
@@ -737,9 +746,11 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
     this.children = [];
     this._parent = null;
     this.name = name ? name : "entity" + Math.floor(Math.random() * 100000);
+    this.rect = new Rect(0, 0, 0, 0);
     this.x = x ? x : 0;
     this.y = y ? y : 0;
-    this.rect = new Rect(0, 0, 0, 0);
+    this.rect.x = this.x;
+    this.rect.y = this.y;
     this.type = "entity";
     this.world = null;
   }
@@ -754,13 +765,34 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
 
   added() {}
 
+  setPosition(value1, value2) {
+    if (typeof value1 === "number") {
+      this._x = value1;
+      this._y = value2 || value2 == 0 ? value2 : this.y;
+    } else {
+      this._x = value1.x;
+      this._y = value1.y;
+    }
+
+    this.updateAbsPos();
+  }
+
+  updateAbsPos() {
+    this.absX = this.parent ? this.parent.absX + this.x : this.x;
+    this.absY = this.parent ? this.parent.absY + this.y : this.y;
+    this.rect.x = this.absX;
+    this.rect.y = this.absY;
+  }
+
   collide(rect) {
     return false;
   }
 
   draw() {
     // console.log("进来了draw")
-    if (this.active && this.graphic && this.graphic.visible != false) this.graphic.draw();
+    if (this.active && this.graphic && this.graphic.visible) {
+      this.graphic.draw();
+    }
   }
 
   start() {
@@ -854,6 +886,7 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
     child._parent = this;
     this.children.push(child);
     this.world.add(child);
+    child.updateAbsPos();
   }
   /**
    * 移除一个子实体
@@ -876,8 +909,8 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
     parent.addChild(this);
   }
 
-}, _temp6)) || _class13;
-export let Sfx = rClass(_class15 = (_temp7 = class Sfx extends RabObject {
+}, _temp8)) || _class17;
+export let Sfx = rClass(_class19 = (_temp9 = class Sfx extends RabObject {
   constructor(soundurl) {
     super();
     this.soundUrl = void 0;
@@ -890,7 +923,7 @@ export let Sfx = rClass(_class15 = (_temp7 = class Sfx extends RabObject {
     this.audio.play();
   }
 
-}, _temp7)) || _class15;
+}, _temp9)) || _class19;
 /**
  * 音频系统类
  * @description 可调用静态方法直接播放音乐
@@ -899,19 +932,19 @@ export let Sfx = rClass(_class15 = (_temp7 = class Sfx extends RabObject {
  * @todo 停止功能
  */
 
-export let AudioSystem = rClass(_class17 = class AudioSystem extends RabObject {
+export let AudioSystem = rClass(_class21 = class AudioSystem extends RabObject {
   static play(soundurl) {
     const audio = Rabbit.loadAudio(soundurl);
     audio.play();
   }
 
-}) || _class17;
+}) || _class21;
 /**
  * 游戏场景类
  * @todo 加载完成依赖的本地资源后再启动
  */
 
-export let World = rClass(_class18 = (_temp8 = class World extends RabObject {
+export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
   /**
    * 游戏场景的名称，具有唯一性
    */
@@ -1078,14 +1111,14 @@ export let World = rClass(_class18 = (_temp8 = class World extends RabObject {
     return collisions;
   }
 
-}, _temp8)) || _class18;
+}, _temp10)) || _class22;
 /**
  * 碰撞类
  * @todo 这个类需编写测试用例来完成
  * @todo 继承Component
  */
 
-export let Collision = rClass(_class20 = (_temp9 = class Collision {
+export let Collision = rClass(_class24 = (_temp11 = class Collision {
   constructor(other, rect) {
     this.other = void 0;
     this.rect = void 0;
@@ -1093,13 +1126,13 @@ export let Collision = rClass(_class20 = (_temp9 = class Collision {
     this.rect = rect;
   }
 
-}, _temp9)) || _class20;
+}, _temp11)) || _class24;
 /**
  * 图形组件
  * @description 所有渲染组件都需继承该组件
  */
 
-export let GraphicComponent = rClass(_class22 = (_temp10 = class GraphicComponent extends Component {
+export let GraphicComponent = rClass(_class26 = (_temp12 = class GraphicComponent extends Component {
   constructor(...args) {
     super(...args);
     this.x = 0;
@@ -1112,7 +1145,7 @@ export let GraphicComponent = rClass(_class22 = (_temp10 = class GraphicComponen
 
   draw() {}
 
-}, _temp10)) || _class22;
+}, _temp12)) || _class26;
 /**
  * 文字锚点位置枚举
  * @enum 
@@ -1128,7 +1161,7 @@ export let TextAlignType;
   TextAlignType["end"] = "end";
 })(TextAlignType || (TextAlignType = {}));
 
-export let Text = rClass(_class24 = (_temp11 = _class25 = class Text extends GraphicComponent {
+export let Text = rClass(_class28 = (_temp13 = _class29 = class Text extends GraphicComponent {
   constructor(x, y, text, font, colour, size, align) {
     super();
     this.text = void 0;
@@ -1165,6 +1198,13 @@ export let Text = rClass(_class24 = (_temp11 = _class25 = class Text extends Gra
   setAlign(align) {
     this.align = align;
   }
+  /**
+   * 设置text的坐标（脱离entity）
+   * @deprecated
+   * @param x 
+   * @param y 
+   */
+
 
   setPosition(x, y) {
     this.x = x;
@@ -1183,10 +1223,12 @@ export let Text = rClass(_class24 = (_temp11 = _class25 = class Text extends Gra
   update(time) {
     // console.log("RabText update 调用")
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
+    this.x = this.entity.absX;
+    this.y = this.entity.absY;
   }
 
-}, _class25.TextAlignType = TextAlignType, _temp11)) || _class24;
-export let Rect = rClass(_class26 = (_temp12 = class Rect extends RabObject {
+}, _class29.TextAlignType = TextAlignType, _temp13)) || _class28;
+export let Rect = rClass(_class30 = (_temp14 = class Rect extends RabObject {
   constructor(x, y, w, h) {
     super();
     this.x = void 0;
@@ -1236,8 +1278,8 @@ export let Rect = rClass(_class26 = (_temp12 = class Rect extends RabObject {
     return this.y;
   }
 
-}, _temp12)) || _class26;
-export let Circle = rClass(_class28 = (_temp13 = class Circle extends RabObject {
+}, _temp14)) || _class30;
+export let Circle = rClass(_class32 = (_temp15 = class Circle extends RabObject {
   constructor(x, y, radius) {
     super();
     this.x = void 0;
@@ -1267,9 +1309,9 @@ export let Circle = rClass(_class28 = (_temp13 = class Circle extends RabObject 
     this.y = pos[1];
   }
 
-}, _temp13)) || _class28;
+}, _temp15)) || _class32;
 ;
-export let GraphicList = rClass(_class30 = (_temp14 = class GraphicList extends GraphicComponent {
+export let GraphicList = rClass(_class34 = (_temp16 = class GraphicList extends GraphicComponent {
   setGraphics(graphics) {
     this.graphics = graphics;
   }
@@ -1284,8 +1326,8 @@ export let GraphicList = rClass(_class30 = (_temp14 = class GraphicList extends 
     Rabbit.Instance.context.save();
     Rabbit.Instance.context.translate(this.x, this.y);
 
-    for (var g = 0; g < this.graphics.length; ++g) {
-      this.graphics[g].draw();
+    for (let i = 0; i < this.graphics.length; ++i) {
+      this.graphics[i].draw();
     }
 
     Rabbit.Instance.context.restore();
@@ -1335,8 +1377,8 @@ export let GraphicList = rClass(_class30 = (_temp14 = class GraphicList extends 
     }
   }
 
-}, _temp14)) || _class30;
-export let RabImage = rClass(_class32 = (_temp15 = class RabImage extends GraphicComponent {
+}, _temp16)) || _class34;
+export let RabImage = rClass(_class36 = (_temp17 = class RabImage extends GraphicComponent {
   get imageUrl() {
     return this._imageUrl;
   }
@@ -1364,11 +1406,6 @@ export let RabImage = rClass(_class32 = (_temp15 = class RabImage extends Graphi
     if (image) this.image = Rabbit.loadImage(image);
   }
 
-  setPosition(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
   async setImageAsync(url) {
     this._imageUrl = url;
     this.image = await Rabbit.loadImageAsync(url);
@@ -1387,24 +1424,22 @@ export let RabImage = rClass(_class32 = (_temp15 = class RabImage extends Graphi
     Rabbit.Instance.context.restore();
   }
 
-  place(pos) {
-    this.x = pos[0];
-    this.y = pos[1];
-  }
-
   update(dtime) {
+    if (!this.image) return;
     Rabbit.Instance.context.save();
     if (this.ignoreCamera) Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));else Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
     Rabbit.Instance.context.clearRect(0, 0, Math.round(this.w), Math.round(this.h));
     Rabbit.Instance.context.restore();
+    this.x = this.entity.absX;
+    this.y = this.entity.absY;
     this._x = this.x;
     this._y = this.y;
     this.w = this.image.width;
     this.h = this.image.height;
   }
 
-}, _temp15)) || _class32;
-export let Sprite = rClass(_class34 = (_temp16 = class Sprite extends GraphicComponent {
+}, _temp17)) || _class36;
+export let Sprite = rClass(_class38 = (_temp18 = class Sprite extends GraphicComponent {
   constructor(x, y, image, frameW, frameH) {
     super();
     this._x = void 0;
@@ -1521,12 +1556,12 @@ export let Sprite = rClass(_class34 = (_temp16 = class Sprite extends GraphicCom
     }
   }
 
-}, _temp16)) || _class34;
+}, _temp18)) || _class38;
 /**
  * 需要重构
  */
 
-export let Tilemap = rClass(_class36 = (_temp17 = class Tilemap extends GraphicComponent {
+export let Tilemap = rClass(_class40 = (_temp19 = class Tilemap extends GraphicComponent {
   constructor(x, y, image, tw, th, gw, gh, tiles) {
     super();
     this.gridW = void 0;
@@ -1598,12 +1633,12 @@ export let Tilemap = rClass(_class36 = (_temp17 = class Tilemap extends GraphicC
     }
   }
 
-}, _temp17)) || _class36;
+}, _temp19)) || _class40;
 /**
  * @class Canvas类
  */
 
-export let Canvas = rClass(_class38 = (_temp18 = class Canvas extends GraphicComponent {
+export let Canvas = rClass(_class42 = (_temp20 = class Canvas extends GraphicComponent {
   constructor(x, y, w, h) {
     super();
     this.alpha = void 0;
@@ -1633,12 +1668,12 @@ export let Canvas = rClass(_class38 = (_temp18 = class Canvas extends GraphicCom
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
   }
 
-}, _temp18)) || _class38;
+}, _temp20)) || _class42;
 /**
  * @class 引擎工具集合类
  */
 
-export let EngineTools = rClass(_class40 = class EngineTools {
+export let EngineTools = rClass(_class44 = class EngineTools {
   /**
    * 删除对象数组中一个元素
    * @static
@@ -1657,4 +1692,4 @@ export let EngineTools = rClass(_class40 = class EngineTools {
     if (!flag) console.warn("deleteItemFromList方法未找到要删除的元素");
   }
 
-}) || _class40; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+}) || _class44; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

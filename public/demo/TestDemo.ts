@@ -47,13 +47,17 @@ export class TestDemo {
             const entity = new Entity('root');
             const text = entity.addComponent(Text);
             text.setAlign(Text.TextAlignType.center);
-            text.setPosition(Rabbit.Instance.winSize.w / 2, Rabbit.Instance.winSize.h / 2);
+            entity.setPosition(Rabbit.Instance.winSize.w / 2, Rabbit.Instance.winSize.h / 2);
             text.text = "Hello, world!";
             entity.mouseDown = () => {
                 console.log("mousedown事件执行");
             };
             world.add(entity);
             const child1 = new Entity('child1');
+            const text1 = child1.addComponent(Text);
+            text1.setAlign(Text.TextAlignType.center);
+            child1.setPosition(50, 0);
+            text1.text = "children text";
             entity.addChild(child1);
             const child2 = new Entity('child2');
             child2.setParent(entity);

@@ -715,17 +715,58 @@ export class Component extends RabObject {
 export class TestComponent extends Component {
 }
 @rClass
+export class Vec2 {
+    x: number;
+    y: number;
+}
+@rClass
+export class Vec3 {
+    x: number;
+    y: number;
+    z: number;
+}
+
+export interface IVec3 {
+    x?: number;
+    y?: number;
+    z?: number;
+}
+export interface IVec2 {
+    x?: number;
+    y?: number;
+}
+@rClass
 export class Entity extends RabObject {
 
     /**
-     * 实体的x坐标
+     * 实体的相对x坐标
      */
-    x: number;
+    _x: number;
+    set x(value: number) {
+        this.setPosition(value);
+    }
+    get x() {
+        return this._x;
+    }
+    /**
+     * 实体的相对y坐标
+     */
+    _y: number;
+    set y(value: number) {
+        this.setPosition(this._x, value);
+    }
+    get y() {
+        return this._y;
+    }
+    /**
+     * 实体的绝对x坐标
+     */
+    absX: number;
 
     /**
-     * 实体的y坐标
+     * 实体的绝对y坐标
      */
-    y: number;
+    absY: number;
 
     /**
      * 实体的盒子
@@ -798,9 +839,11 @@ export class Entity extends RabObject {
     constructor(name?: string, x?: number, y?: number) {
         super();
         this.name = name ? name : "entity" + Math.floor(Math.random() * 100000);
+        this.rect = new Rect(0, 0, 0, 0);
         this.x = x ? x : 0;
         this.y = y ? y : 0;
-        this.rect = new Rect(0, 0, 0, 0);
+        this.rect.x = this.x;
+        this.rect.y = this.y;
         this.type = "entity";
         this.world = null;
     }
@@ -816,15 +859,34 @@ export class Entity extends RabObject {
     added() {
 
     }
-
-    collide(rect) {
+    setPosition(x: number);
+    setPosition(x: number, y: number);
+    setPosition(vec2: IVec2);
+    setPosition(value1?: IVec2 | number, value2?: number) {
+        if (typeof value1 === "number") {
+            this._x = value1;
+            this._y = (value2 || value2 == 0) ? value2 : this.y;
+        } else {
+            this._x = value1.x;
+            this._y = value1.y;
+        }
+        this.updateAbsPos();
+    }
+    updateAbsPos() {
+        this.absX = this.parent ? this.parent.absX + this.x : this.x;
+        this.absY = this.parent ? this.parent.absY + this.y : this.y;
+        this.rect.x = this.absX;
+        this.rect.y = this.absY;
+    }
+    collide(rect: Rect) {
         return false;
     }
 
     draw() {
         // console.log("进来了draw")
-        if (this.active && this.graphic && this.graphic.visible != false)
+        if (this.active && this.graphic && this.graphic.visible) {
             this.graphic.draw();
+        }
     }
 
     start() {
@@ -911,6 +973,7 @@ export class Entity extends RabObject {
         child._parent = this;
         this.children.push(child);
         this.world.add(child);
+        child.updateAbsPos();
     }
 
     /**
@@ -1208,12 +1271,19 @@ export class Text extends GraphicComponent {
         this.align = align;
     }
 
-    setPosition(x: number, y: number) {
+    /**
+     * 设置text的坐标（脱离entity）
+     * @deprecated
+     * @param x 
+     * @param y 
+     */
+    private setPosition(x: number, y: number) {
         this.x = x;
         this.y = y;
     }
 
     draw() {
+
         this.w = Rabbit.Instance.context.measureText(this.text).width;
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.textAlign = this.align;
@@ -1225,6 +1295,8 @@ export class Text extends GraphicComponent {
     update(time) {
         // console.log("RabText update 调用")
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
+        this.x = this.entity.absX;
+        this.y = this.entity.absY;
     }
 }
 @rClass
@@ -1333,8 +1405,8 @@ export class GraphicList extends GraphicComponent {
     draw() {
         Rabbit.Instance.context.save();
         Rabbit.Instance.context.translate(this.x, this.y);
-        for (var g = 0; g < this.graphics.length; ++g) {
-            this.graphics[g].draw();
+        for (let i = 0; i < this.graphics.length; ++i) {
+            this.graphics[i].draw();
         }
         Rabbit.Instance.context.restore();
     }
@@ -1411,10 +1483,7 @@ export class RabImage extends GraphicComponent {
         this.alpha = 1;
         if (image) this.image = Rabbit.loadImage(image);
     }
-    setPosition(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-    }
+
     async setImageAsync(url: string) {
         this._imageUrl = url;
         this.image = await Rabbit.loadImageAsync(url);
@@ -1424,6 +1493,8 @@ export class RabImage extends GraphicComponent {
 
     draw() {
         if (!this.image || !(this.image as any).valid) return;
+
+
         Rabbit.Instance.context.save();
         Rabbit.Instance.context.globalAlpha = this.alpha;
         if (this.ignoreCamera)
@@ -1437,12 +1508,8 @@ export class RabImage extends GraphicComponent {
         Rabbit.Instance.context.restore();
     }
 
-    place(pos) {
-        this.x = pos[0];
-        this.y = pos[1];
-    };
-
     update(dtime) {
+        if (!this.image) return;
         Rabbit.Instance.context.save();
         if (this.ignoreCamera)
             Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
@@ -1450,6 +1517,8 @@ export class RabImage extends GraphicComponent {
             Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
         Rabbit.Instance.context.clearRect(0, 0, Math.round(this.w), Math.round(this.h));
         Rabbit.Instance.context.restore();
+        this.x = this.entity.absX;
+        this.y = this.entity.absY;
         this._x = this.x;
         this._y = this.y;
         this.w = this.image.width;

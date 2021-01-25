@@ -10,7 +10,6 @@ class Robot extends Component {
     this.entity.x = x;
     this.entity.y = y;
     this.image = this.entity.addComponent(RabImage);
-    this.image.setPosition(x, y);
     this.image.imageUrl = "graphics/robot.png";
   }
 
@@ -47,8 +46,6 @@ export function main() {
         default:
           break;
       }
-
-      robot.image.place([entity.x, entity.y]);
     };
 
     world.add(entity);
