@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _class18, _temp8, _class20, _temp9, _class22, _temp10, _class24, _class25, _temp11, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _class18, _temp8, _class20, _temp9, _class22, _temp10, _class24, _class25, _temp11, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40;
 
 /** 
  * --------------------------------------------------------
@@ -20,6 +20,11 @@ import { rClass } from "../ts/Decorator.js";
  */
 
 export const rabbitClass = {};
+/**
+ * 记录当前引擎版本
+ */
+
+export const rabbitVersion = "0.2";
 /**
  * ###en
  * 
@@ -80,10 +85,24 @@ export let KeyType;
 })(KeyType || (KeyType = {}));
 
 export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
+  /**
+   * Rabbit运行环境唯一实例
+   */
+
+  /**
+   * 返回Canvas的矩形框
+   */
   get winSize() {
     return new Rect(0, 0, this.canvas.width, this.canvas.height);
   }
+  /**
+   * 游戏的Html画布
+   */
 
+
+  /**
+   * Rabbit运行环境构造器函数
+   */
   constructor() {
     this.canvas = null;
     this.camera = null;
@@ -99,8 +118,8 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.fps = 60;
     this.keysPressed = [];
     this.maxFrameTime = 0.030;
-    this.time = void 0;
-    this._nextWorld = void 0;
+    this.time = undefined;
+    this._nextWorld = null;
     this.worldMap = new Map();
     this.isRabbitRun = false;
     this.updateId = null;
@@ -161,6 +180,10 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.resetCamera();
     console.log("rabbit 初始化完成");
   }
+  /**
+   * 重设摄像机
+   */
+
 
   resetCamera() {
     this.camera = {
@@ -200,6 +223,11 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.images[url] = img;
     return img;
   }
+  /**
+   * 异步加载图片
+   * @param url 图片地址
+   */
+
 
   static loadImageAsync(url) {
     return new Promise((success, fail) => {
@@ -223,6 +251,11 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
       };
     });
   }
+  /**
+   * 加载音乐
+   * @param url 音乐地址
+   */
+
 
   static loadAudio(url) {
     let channel = null;
@@ -358,14 +391,30 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.canvas.style.backgroundImage = 'url(' + url + ')';
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
+  /**
+   * 设置场景为下次运行的场景
+   * @deprecated 该方法已弃用
+   * @param world 
+   */
+
 
   setWorld(world) {
     this._nextWorld = world;
   }
+  /**
+   * 添加一个场景实例
+   * @param world 添加场景实例
+   */
+
 
   addWorld(world) {
     this.worldMap.set(world.name, world);
   }
+  /**
+   * 运行游戏场景
+   * @param worldname 游戏场景名
+   */
+
 
   runWorld(worldname) {
     if (this.isRabbitRun) this.stop();
@@ -381,6 +430,10 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     } // console.log("this.world", this.world)
 
   }
+  /**
+   * 停止游戏主循环
+   */
+
 
   stop() {
     if (this.updateId) clearInterval(this.updateId);else return false;
@@ -389,13 +442,21 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.isRabbitRun = false;
     return true;
   }
+  /**
+   * 触发world的start函数
+   */
+
 
   start() {
     this.world.start();
   }
+  /**
+   * update主循环函数
+   */
+
 
   update() {
-    var dtime = (Date.now() - this.time) / 1000;
+    let dtime = (Date.now() - this.time) / 1000;
     if (dtime > this.maxFrameTime) dtime = this.maxFrameTime;
     this.time = Date.now();
     this.world.update(dtime);
@@ -409,22 +470,28 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     }
   }
 
-}, _class2.Instance = null, _class2.images = new Map(), _class2.audioChannels = [], _class2.version = 0.2, _temp)) || _class;
+}, _class2.Instance = null, _class2.images = new Map(), _class2.audioChannels = [], _class2.version = rabbitVersion, _temp)) || _class;
 export let rabbit = null;
 /**
- * 管理所有的实体
- * 单例
+ * @class 管理所有的实体
  */
 
 export let EntitySystem = rClass(_class3 = (_temp2 = _class4 = class EntitySystem {
-  remove(e) {
-    e.removed();
-    Rabbit.Instance.world.removed.push(e);
-  }
+  /**
+   * @instance EntitySystem的唯一静态实例
+   */
 
+  /**
+   * @constructor EntitySystem的构造器函数
+   */
   constructor() {
     EntitySystem.Instance = this;
   }
+  /**
+   * 在场景中添加实体
+   * @param e 要添加的实体
+   */
+
 
   add(e) {
     const world = Rabbit.Instance.world;
@@ -433,6 +500,10 @@ export let EntitySystem = rClass(_class3 = (_temp2 = _class4 = class EntitySyste
     e.world = world;
     e.added();
   }
+  /**
+   * 为场景中所有实体派发绘制事件
+   */
+
 
   draw() {
     const entities = Rabbit.Instance.world.entities;
@@ -446,6 +517,16 @@ export let EntitySystem = rClass(_class3 = (_temp2 = _class4 = class EntitySyste
     for (let i = 0; i < entities.length; ++i) {
       entities[i].draw();
     }
+  }
+  /**
+   * 在该帧结束时移除该实体
+   * @param e 要移除的实体
+   */
+
+
+  remove(e) {
+    e.removed();
+    Rabbit.Instance.world.removed.push(e);
   }
 
 }, _class4.Instance = void 0, _temp2)) || _class3;
@@ -466,6 +547,39 @@ export let CompSystem = rClass(_class5 = (_temp3 = _class6 = class CompSystem {
  */
 
 export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem {
+  constructor() {
+    EventSystem.Instance = this;
+  }
+
+  start() {
+    const entities = Rabbit.Instance.world.entities;
+
+    for (let i = 0; i < entities.length; ++i) {
+      const entity = entities[i];
+      if (entity.active) entity.start();
+    }
+  }
+
+  update(dtime) {
+    const entities = Rabbit.Instance.world.entities;
+    const removed = Rabbit.Instance.world.removed;
+
+    for (let i = 0; i < entities.length; ++i) {
+      const entity = entities[i];
+      if (!entity.active) continue;
+      entity.update(dtime);
+    } //可能开销比较大？
+
+
+    for (let j = 0; j < removed.length; ++j) {
+      for (let i = 0; i < entities.length; ++i) {
+        if (entities[i] == removed[j]) entities.splice(i, 1);
+      }
+    }
+
+    Rabbit.Instance.world.removed = [];
+  }
+
   keyDown(key) {
     const entities = Rabbit.Instance.world.entities;
 
@@ -488,10 +602,6 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
     for (let i = entities.length - 1; i >= 0; --i) {
       if (entities[i]) entities[i].mouseDown();
     }
-  }
-
-  constructor() {
-    EventSystem.Instance = this;
   }
 
 }, _class8.Instance = void 0, _temp4)) || _class7;
@@ -550,7 +660,69 @@ export let Component = rClass(_class10 = (_temp5 = class Component extends RabOb
 }, _temp5)) || _class10;
 export let TestComponent = rClass(_class12 = class TestComponent extends Component {}) || _class12;
 export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
-  constructor(x, y) {
+  /**
+   * 实体的x坐标
+   */
+
+  /**
+   * 实体的y坐标
+   */
+
+  /**
+   * 实体的盒子
+   */
+
+  /**
+   * 实体的渲染组件
+   */
+
+  /**
+   * 实体的类型字符串
+   */
+
+  /**
+   * 实体所属场景
+   */
+
+  /**
+   * 实体的名称
+   */
+
+  /**
+   * 实体的id
+   */
+
+  /**
+   * 实体是否激活
+   */
+  get active() {
+    return this._active;
+  }
+
+  set active(value) {
+    this._active = value;
+  }
+  /**
+   * 实体拥有的所有组件
+   */
+
+
+  get parent() {
+    return this._parent;
+  }
+
+  set parent(parent) {
+    this.setParent(parent);
+  }
+  /**
+   * @constructor 实体的构造器函数
+   * @param x 实体x坐标（可选）
+   * @param y 实体y坐标（可选）
+   * @todo name的命名制定一套规则
+   */
+
+
+  constructor(name, x, y) {
     super();
     this.x = void 0;
     this.y = void 0;
@@ -560,9 +732,11 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
     this.world = void 0;
     this.name = void 0;
     this.id = void 0;
-    this.active = true;
+    this._active = true;
     this.components = [];
     this.children = [];
+    this._parent = null;
+    this.name = name ? name : "entity" + Math.floor(Math.random() * 100000);
     this.x = x ? x : 0;
     this.y = y ? y : 0;
     this.rect = new Rect(0, 0, 0, 0);
@@ -590,6 +764,7 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
   }
 
   start() {
+    console.log(this.name + " start执行");
     const len = this.components.length;
     if (len == 0) return;
 
@@ -667,6 +842,39 @@ export let Entity = rClass(_class13 = (_temp6 = class Entity extends RabObject {
 
     return null;
   }
+  /**
+   * 在当前实体下增加子实体
+   * @param child 
+   */
+
+
+  addChild(child) {
+    if (!child) return console.warn("要添加的子节点不存在");
+    if (child.parent) child.parent.removeChild(this);
+    child._parent = this;
+    this.children.push(child);
+    this.world.add(child);
+  }
+  /**
+   * 移除一个子实体
+   * @param child 要移除的子实体
+   */
+
+
+  removeChild(child) {
+    EngineTools.deleteItemFromList(child, this.children);
+    this.world.remove(child);
+  }
+  /**
+   * 设置当前实体的父实体
+   * @param parent 
+   */
+
+
+  setParent(parent) {
+    if (!parent) return console.warn("要添加的父节点不存在");
+    parent.addChild(this);
+  }
 
 }, _temp6)) || _class13;
 export let Sfx = rClass(_class15 = (_temp7 = class Sfx extends RabObject {
@@ -683,6 +891,14 @@ export let Sfx = rClass(_class15 = (_temp7 = class Sfx extends RabObject {
   }
 
 }, _temp7)) || _class15;
+/**
+ * 音频系统类
+ * @description 可调用静态方法直接播放音乐
+ * @todo 区分音效和背景音乐播放功能
+ * @todo 暂定功能
+ * @todo 停止功能
+ */
+
 export let AudioSystem = rClass(_class17 = class AudioSystem extends RabObject {
   static play(soundurl) {
     const audio = Rabbit.loadAudio(soundurl);
@@ -690,7 +906,40 @@ export let AudioSystem = rClass(_class17 = class AudioSystem extends RabObject {
   }
 
 }) || _class17;
+/**
+ * 游戏场景类
+ * @todo 加载完成依赖的本地资源后再启动
+ */
+
 export let World = rClass(_class18 = (_temp8 = class World extends RabObject {
+  /**
+   * 游戏场景的名称，具有唯一性
+   */
+
+  /**
+   * 游戏中所有实体的索引集合
+   */
+
+  /**
+   * 游戏中所有要移除的实体集合，在update事件时移除
+   */
+
+  /**
+   * 简单的实体id区分，每增加一个实体id增加
+   */
+
+  /**
+   * 实体管理系统唯一实例
+   */
+
+  /**
+   * 事件管理系统唯一实例
+   */
+
+  /**
+   * 构造器函数，调用创建一个场景
+   * @param name 游戏场景的名称
+   */
   constructor(name) {
     super();
     this.name = void 0;
@@ -749,75 +998,93 @@ export let World = rClass(_class18 = (_temp8 = class World extends RabObject {
 
     return entities;
   }
+  /**
+   * 从场景中所有实体中筛选获得被标记为同一type的实体集合
+   * @param type 实体类型
+   */
+
 
   getType(type) {
     return this.filter(e => {
       return e.type == type;
     });
   }
+  /**
+   * 按键按下事件
+   */
+
 
   keyDown(key) {
     this.eventSystem.keyDown(key);
   }
+  /**
+   * 按键弹起事件
+   */
+
 
   keyUp(key) {
     this.eventSystem.keyUp(key);
   }
+  /**
+   * 鼠标按下事件
+   */
+
 
   mouseDown() {
     this.eventSystem.mouseDown();
   }
+  /**
+   * 按键按下事件，无需手动调用
+   */
 
-  _update(dtime) {
-    for (let i = 0; i < this.entities.length; ++i) {
-      const entity = this.entities[i];
-      if (!entity.active) continue;
-      entity.update(dtime);
-    } //可能开销比较大？
-
-
-    for (let j = 0; j < this.removed.length; ++j) {
-      for (let i = 0; i < this.entities.length; ++i) {
-        if (this.entities[i] == this.removed[j]) this.entities.splice(i, 1);
-      }
-    }
-
-    this.removed = [];
-  }
 
   update(dtime) {
-    this._update(dtime);
+    this.eventSystem.update(dtime);
   }
+  /**
+   * start事件，无需手动调用
+   */
+
 
   start() {
     console.log("start事件总线执行");
-
-    for (let i = 0; i < this.entities.length; ++i) {
-      const entity = this.entities[i];
-      if (entity.active) entity.start();
-    }
+    this.eventSystem.start();
   }
+  /**
+   * stop事件，无需手动调用
+   */
+
 
   stop() {
     this.entities = [];
     this.removed = [];
     this.maxId = 0;
   }
+  /**
+   * 碰撞事件，无需手动调用
+   */
+
 
   collide(rect) {
     let collisions = [];
 
     for (let i = 0; i < this.entities.length; i++) {
-      var e = this.entities[i];
-      if (e.graphic == null) continue;
-      let entRect = new Rect(e.graphic.x, e.graphic.y, e.graphic.w, e.graphic.h);
-      if (rect.collideRect(entRect)) collisions.push(new Collision(e, entRect));
+      const entity = this.entities[i];
+      if (entity.graphic == null) continue;
+      const entRect = new Rect(entity.graphic.x, entity.graphic.y, entity.graphic.w, entity.graphic.h);
+      if (rect.collideRect(entRect)) collisions.push(new Collision(entity, entRect));
     }
 
     return collisions;
   }
 
 }, _temp8)) || _class18;
+/**
+ * 碰撞类
+ * @todo 这个类需编写测试用例来完成
+ * @todo 继承Component
+ */
+
 export let Collision = rClass(_class20 = (_temp9 = class Collision {
   constructor(other, rect) {
     this.other = void 0;
@@ -827,6 +1094,11 @@ export let Collision = rClass(_class20 = (_temp9 = class Collision {
   }
 
 }, _temp9)) || _class20;
+/**
+ * 图形组件
+ * @description 所有渲染组件都需继承该组件
+ */
+
 export let GraphicComponent = rClass(_class22 = (_temp10 = class GraphicComponent extends Component {
   constructor(...args) {
     super(...args);
@@ -841,6 +1113,11 @@ export let GraphicComponent = rClass(_class22 = (_temp10 = class GraphicComponen
   draw() {}
 
 }, _temp10)) || _class22;
+/**
+ * 文字锚点位置枚举
+ * @enum 
+ */
+
 export let TextAlignType;
 
 (function (TextAlignType) {
@@ -1322,6 +1599,10 @@ export let Tilemap = rClass(_class36 = (_temp17 = class Tilemap extends GraphicC
   }
 
 }, _temp17)) || _class36;
+/**
+ * @class Canvas类
+ */
+
 export let Canvas = rClass(_class38 = (_temp18 = class Canvas extends GraphicComponent {
   constructor(x, y, w, h) {
     super();
@@ -1352,4 +1633,28 @@ export let Canvas = rClass(_class38 = (_temp18 = class Canvas extends GraphicCom
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
   }
 
-}, _temp18)) || _class38; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+}, _temp18)) || _class38;
+/**
+ * @class 引擎工具集合类
+ */
+
+export let EngineTools = rClass(_class40 = class EngineTools {
+  /**
+   * 删除对象数组中一个元素
+   * @static
+   */
+  static deleteItemFromList(item, list) {
+    let flag = false;
+
+    for (let i = 0; i < list.length; i++) {
+      if (item == list[i]) {
+        list.splice(i, 1);
+        flag = true;
+        break;
+      }
+    }
+
+    if (!flag) console.warn("deleteItemFromList方法未找到要删除的元素");
+  }
+
+}) || _class40; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

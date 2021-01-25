@@ -46,10 +46,10 @@ export class TestDemo {
     const world = new World("demo1");
 
     world.init = () => {
-      const entity = new Entity();
+      const entity = new Entity('root');
       const text = entity.addComponent(Text);
       text.setAlign(Text.TextAlignType.center);
-      text.setPosition(Rabbit.Instance.winSize.w / 2, 0);
+      text.setPosition(Rabbit.Instance.winSize.w / 2, Rabbit.Instance.winSize.h / 2);
       text.text = "Hello, world!";
 
       entity.mouseDown = () => {
@@ -57,6 +57,11 @@ export class TestDemo {
       };
 
       world.add(entity);
+      const child1 = new Entity('child1');
+      entity.addChild(child1);
+      const child2 = new Entity('child2');
+      child2.setParent(entity);
+      console.log("entity", entity);
     };
 
     return world;
