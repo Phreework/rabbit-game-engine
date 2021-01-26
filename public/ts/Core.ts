@@ -96,13 +96,18 @@ export class Rabbit {
      * 返回Canvas的矩形框
      */
     get winSize(): Rect {
-        return new Rect(0, 0, this.canvas.width, this.canvas.height);
+        return new Rect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
     }
 
     /**
      * 游戏的Html画布
      */
-    canvas: HTMLCanvasElement = null;
+    htmlCanvas: HTMLCanvasElement = null;
+
+    /**
+     * Rabbit画布对象
+     */
+    canvas: Canvas = null;
 
     /**
      * 游戏摄像机,存储了camera的位置
@@ -210,13 +215,12 @@ export class Rabbit {
      * Rabbit运行环境构造器函数
      */
     constructor() {
-        if (!Rabbit.Instance) {
-            Rabbit.Instance = this;
-            rabbit = Rabbit.Instance;
-            this.entitySystem = new EntitySystem();
-            this.compSystem = new CompSystem();
-            this.eventSystem = new EventSystem();
-        }
+        if (Rabbit.Instance) return;
+        Rabbit.Instance = this;
+        rabbit = Rabbit.Instance;
+        this.entitySystem = new EntitySystem();
+        this.compSystem = new CompSystem();
+        this.eventSystem = new EventSystem();
     }
 
     /**
@@ -225,26 +229,22 @@ export class Rabbit {
      */
     init(canvasid?: string): void {
         canvasid = canvasid ? canvasid : 'rabbit-canvas';
-        const canvas: HTMLCanvasElement = document.getElementById(canvasid) as HTMLCanvasElement;
-        this.canvas = canvas;
-        this.context = canvas.getContext('2d');
+        const htmlCanvas: HTMLCanvasElement = document.getElementById(canvasid) as HTMLCanvasElement;
+        this.htmlCanvas = htmlCanvas;
+        this.context = htmlCanvas.getContext('2d');
 
-        this.canvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e) };
-        document.onkeydown = (e) => { Rabbit.Instance.keyDown(e) };
-        document.onkeyup = (e) => { Rabbit.Instance.keyUp(e) };
-        this.canvas.onmousemove = (e) => { Rabbit.Instance.mouseMove(e) };
-        this.canvas.onmouseout = (e) => { Rabbit.Instance.mouseOut(e) };
+        this.eventSystem.initEventRegister();
 
         if (document.defaultView && document.defaultView.getComputedStyle) {
-            const paddingLeft: number = +(document.defaultView.getComputedStyle(canvas, null)['paddingLeft']) || 0;
-            const paddingTop: number = +(document.defaultView.getComputedStyle(canvas, null)['paddingTop']) || 0;
-            const borderLeft: number = +(document.defaultView.getComputedStyle(canvas, null)['borderLeftWidth']) || 0;
-            const borderTop: number = +(document.defaultView.getComputedStyle(canvas, null)['borderTopWidth']) || 0;
+            const paddingLeft: number = +(document.defaultView.getComputedStyle(htmlCanvas, null)['paddingLeft']) || 0;
+            const paddingTop: number = +(document.defaultView.getComputedStyle(htmlCanvas, null)['paddingTop']) || 0;
+            const borderLeft: number = +(document.defaultView.getComputedStyle(htmlCanvas, null)['borderLeftWidth']) || 0;
+            const borderTop: number = +(document.defaultView.getComputedStyle(htmlCanvas, null)['borderTopWidth']) || 0;
             this.offset = [paddingLeft + borderLeft, paddingTop + borderTop];
         }
 
-        this.canvas.width = this.canvas.clientWidth;
-        this.canvas.height = this.canvas.clientHeight;
+        this.htmlCanvas.width = this.htmlCanvas.clientWidth;
+        this.htmlCanvas.height = this.htmlCanvas.clientHeight;
 
         this.resetCamera();
         console.log("rabbit 初始化完成")
@@ -333,7 +333,7 @@ export class Rabbit {
      */
     _mousePosition(e) {
         let ox: number = 0, oy: number = 0;
-        const element: HTMLCanvasElement = this.canvas;
+        const element: HTMLCanvasElement = this.htmlCanvas;
         if (element.offsetParent) {
             do {
                 ox += element.offsetLeft;
@@ -423,8 +423,8 @@ export class Rabbit {
      * @param url 背景图片地址
      */
     setBackground(url: string) {
-        this.canvas.style.backgroundImage = 'url(' + url + ')';
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.htmlCanvas.style.backgroundImage = 'url(' + url + ')';
+        this.context.clearRect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
     }
 
     /**
@@ -489,7 +489,7 @@ export class Rabbit {
         if (dtime > this.maxFrameTime) dtime = this.maxFrameTime;
         this.time = Date.now();
         this.world.update(dtime);
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.clearRect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
         this.world.draw();
         this.mouse.pressed = false;
         if (this._nextWorld) {
@@ -507,6 +507,7 @@ export let rabbit: Rabbit = null;
  */
 @rClass
 export class EntitySystem {
+
 
     /**
      * @instance EntitySystem的唯一静态实例
@@ -529,7 +530,8 @@ export class EntitySystem {
         world.entities.push(e);
         e.id = world.maxId++;
         e.world = world;
-        e.added();
+        if (e.isRemoved == true) e.isRemoved = false;
+        e.onAdd();
     }
 
     /**
@@ -552,12 +554,21 @@ export class EntitySystem {
     }
 
     /**
+     * 在该帧结束时删除该实体
+     * @param e 要删除的实体
+     */
+    destroyEntity(e: Entity) {
+        e.onDestroy();
+        Rabbit.Instance.world.preDestroys.push(e);
+    }
+    /**
      * 在该帧结束时移除该实体
      * @param e 要移除的实体
      */
-    remove(e: Entity) {
-        e.removed();
-        Rabbit.Instance.world.removed.push(e);
+    removeEntity(e: Entity) {
+        e.isRemoved = true;
+        e.parent = null;
+        Rabbit.Instance.world.removes.push(e);
     }
 }
 /**
@@ -579,6 +590,13 @@ export class CompSystem {
  */
 @rClass
 export class EventSystem {
+    initEventRegister() {
+        Rabbit.Instance.htmlCanvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e); };
+        document.onkeydown = (e) => { Rabbit.Instance.keyDown(e); };
+        document.onkeyup = (e) => { Rabbit.Instance.keyUp(e); };
+        Rabbit.Instance.htmlCanvas.onmousemove = (e) => { Rabbit.Instance.mouseMove(e); };
+        Rabbit.Instance.htmlCanvas.onmouseout = (e) => { Rabbit.Instance.mouseOut(e); };
+    }
 
     static Instance: EventSystem;
 
@@ -596,7 +614,7 @@ export class EventSystem {
 
     update(dtime: number) {
         const entities = Rabbit.Instance.world.entities;
-        const removed = Rabbit.Instance.world.removed;
+        const preDestroys = Rabbit.Instance.world.preDestroys;
         for (let i = 0; i < entities.length; ++i) {
             const entity = entities[i];
             if (!entity.active) continue;
@@ -604,13 +622,12 @@ export class EventSystem {
         }
 
         //可能开销比较大？
-        for (let j = 0; j < removed.length; ++j) {
+        for (let j = 0; j < preDestroys.length; ++j) {
             for (let i = 0; i < entities.length; ++i) {
-                if (entities[i] == removed[j])
-                    entities.splice(i, 1);
+                if (entities[i] == preDestroys[j]) entities.splice(i, 1);
             }
         }
-        Rabbit.Instance.world.removed = [];
+        Rabbit.Instance.world.preDestroys = [];
     }
 
     keyDown(key: number) {
@@ -718,12 +735,21 @@ export class TestComponent extends Component {
 export class Vec2 {
     x: number;
     y: number;
+    constructor(x?: number, y?: number) {
+        this.x = x ? x : 0;
+        this.y = y ? y : 0;
+    }
 }
 @rClass
 export class Vec3 {
     x: number;
     y: number;
     z: number;
+    constructor(x?: number, y?: number, z?: number) {
+        this.x = x ? x : 0;
+        this.y = y ? y : 0;
+        this.z = z ? z : 0;
+    }
 }
 
 export interface IVec3 {
@@ -735,6 +761,45 @@ export interface IVec2 {
     x?: number;
     y?: number;
 }
+
+@rClass
+export class Transform extends Component {
+    position: Vec3;
+    localPosition: Vec3;
+    angle: number;
+    localAngle: number;
+    /**
+     * @description transform的右边界框right
+     */
+    get right() {
+
+    }
+
+    get top() {
+
+    }
+    get left() {
+
+    }
+    get down() {
+
+    }
+    localScale: Vec3;
+    parent: Transform;
+
+    isChildOf(): bool {
+
+    }
+    transformPoint(): Vec3 {
+
+    }
+    inverseTransformPoint(): Vec3 {
+
+    }
+    tween() {
+
+    }
+}
 @rClass
 export class Entity extends RabObject {
 
@@ -742,6 +807,7 @@ export class Entity extends RabObject {
      * 实体的相对x坐标
      */
     _x: number;
+
     set x(value: number) {
         this.setPosition(value);
     }
@@ -808,7 +874,20 @@ export class Entity extends RabObject {
     set active(value: boolean) {
         this._active = value;
     }
-
+    private _isActiveOnRemoved: boolean = true;
+    private _isRemoved: boolean = false;
+    get isRemoved() {
+        return this._isRemoved;
+    }
+    set isRemoved(value: boolean) {
+        this._isRemoved = value;
+        if (this._isRemoved) {
+            this._isActiveOnRemoved = this.active;
+            this.active = false;
+        } else {
+            this.active = this._isActiveOnRemoved;
+        }
+    }
     /**
      * 实体拥有的所有组件
      */
@@ -854,9 +933,9 @@ export class Entity extends RabObject {
 
     mouseDown() { };
 
-    removed() { };
+    onDestroy() { };
 
-    added() {
+    onAdd() {
 
     }
     setPosition(x: number);
@@ -982,7 +1061,20 @@ export class Entity extends RabObject {
      */
     removeChild(child: Entity) {
         EngineTools.deleteItemFromList(child, this.children);
-        this.world.remove(child);
+    }
+
+    /**
+     * 摧毁自己
+     */
+    destroy() {
+        this.world.destroyEntity(this);
+    }
+
+    /**
+     * 移除自己
+     */
+    remove() {
+        this.world.removeEntity(this);
     }
 
     /**
@@ -990,8 +1082,16 @@ export class Entity extends RabObject {
      * @param parent 
      */
     setParent(parent: Entity) {
-        if (!parent) return console.warn("要添加的父节点不存在");
-        parent.addChild(this);
+        if (!parent) {
+            if (this.parent) this.parent.removeChild(this);
+            this._parent = null;
+        } else {
+            parent.addChild(this);
+        }
+    }
+
+    getBoundingBox(): BoundingBox {
+        return this.rect.getBoundingBox();
     }
 }
 @rClass
@@ -1033,6 +1133,7 @@ export class AudioSystem extends RabObject {
 @rClass
 export class World extends RabObject {
 
+
     /**
      * 游戏场景的名称，具有唯一性
      */
@@ -1046,8 +1147,12 @@ export class World extends RabObject {
     /**
      * 游戏中所有要移除的实体集合，在update事件时移除
      */
-    removed: Entity[] = [];
+    preDestroys: Entity[] = [];
 
+    /**
+     * 移除贮存的实体集合
+     */
+    removes: Entity[] = [];
     /**
      * 简单的实体id区分，每增加一个实体id增加
      */
@@ -1062,6 +1167,7 @@ export class World extends RabObject {
      * 事件管理系统唯一实例
      */
     eventSystem: EventSystem = Rabbit.Instance.eventSystem;
+
 
     /**
      * 构造器函数，调用创建一个场景
@@ -1086,13 +1192,19 @@ export class World extends RabObject {
     }
 
     /**
-     * 在世界中移除实体
-     * @param e 要移除的实体
+     * 在世界中删除实体
+     * @param e 要删除的实体
      */
-    remove(e: Entity) {
-        this.entitySystem.remove(e);
+    destroyEntity(e: Entity) {
+        this.entitySystem.destroyEntity(e);
     }
-
+    /**
+     * 在世界中移除实体，移除实体并不会清理实体，而是被贮存等待恢复
+     * @param e 要删除的实体
+     */
+    removeEntity(e: Entity) {
+        this.entitySystem.removeEntity(e);
+    }
     /**
      * 排序并派发世界中所有有渲染组件的实体执行渲染任务
      */
@@ -1164,7 +1276,7 @@ export class World extends RabObject {
      */
     stop() {
         this.entities = [];
-        this.removed = [];
+        this.preDestroys = [];
         this.maxId = 0;
     }
 
@@ -1299,12 +1411,61 @@ export class Text extends GraphicComponent {
         this.y = this.entity.absY;
     }
 }
+
+@rClass
+export class BoundingBox extends RabObject {
+    left: number;
+    right: number;
+    top: number;
+    down: number;
+    constructor();
+    constructor(rect: Rect);
+    constructor(x: number, y: number, width: number, height: number);
+    constructor(v1?: Rect | number, v2?: number, v3?: number, v4?: number) {
+        super();
+        if (typeof v1 === "object") {
+            this.left = v1.x - v1.w / 2;
+            this.right = v1.x + v1.w / 2;
+            this.top = v1.y + v1.h / 2;
+            this.down = v1.y - v1.h / 2;
+        } else {
+            this.left = v1 - v3 / 2;
+            this.right = v1 + v3 / 2;
+            this.top = v2 + v4 / 2;
+            this.down = v2 - v4 / 2;
+        }
+    }
+}
 @rClass
 export class Rect extends RabObject {
     x: number;
     y: number;
-    w: number;
-    h: number;
+    _width: number;
+    set w(value: number) {
+        this._width = value;
+    }
+    get w() {
+        return this._width;
+    }
+    set width(value: number) {
+        this._width = value;
+    }
+    get width() {
+        return this._width;
+    }
+    _height: number;
+    set h(value: number) {
+        this._height = value;
+    }
+    get h() {
+        return this._height;
+    }
+    set height(value: number) {
+        this._height = value;
+    }
+    get height() {
+        return this._height;
+    }
     constructor(x, y, w, h) {
         super();
         this.x = x;
@@ -1357,6 +1518,10 @@ export class Rect extends RabObject {
 
     top() {
         return this.y;
+    }
+
+    getBoundingBox(): BoundingBox {
+        return new BoundingBox(this);
     }
 }
 @rClass
@@ -1434,7 +1599,7 @@ export class GraphicList extends GraphicComponent {
         this.move(dx, dy);
     }
 
-    remove(graphic) {
+    destroy(graphic) {
         for (let g = 0; g < this.graphics.length; ++g) {
             if (this.graphics[g] == graphic)
                 this.graphics.slice(g);
@@ -1525,6 +1690,43 @@ export class RabImage extends GraphicComponent {
         this.h = this.image.height;
     }
 }
+
+/**
+ * 直接绑定Canvas对象，每个场景中只能有一个
+ */
+@rClass
+export class Canvas extends Component {
+    /**
+     * Canvas唯一实例
+     */
+    static Instance: Canvas;
+    /**
+     * @description 设计分辨率
+     */
+    resolution: { width: number, height: number };
+    /**
+     * 适配宽度
+     * @todo 整体适配相关方法
+     */
+    isFitWidth: boolean = false;
+    /**
+     * 适配高度
+     * @todo 整体适配相关方法
+     */
+    isFitHeight: boolean = true;
+    /**
+     * @todo 应该对多出来的Canvas做销毁操作
+     */
+    constructor() {
+        super();
+        if (Canvas.Instance) return null;
+        Canvas.Instance = this;
+        this.resolution = {
+            width: Rabbit.Instance.htmlCanvas.width,
+            height: Rabbit.Instance.htmlCanvas.height
+        }
+    }
+}
 @rClass
 export class Sprite extends GraphicComponent {
     private _x: any;
@@ -1607,7 +1809,6 @@ export class Sprite extends GraphicComponent {
         Rabbit.Instance.context.drawImage(this.image, fx, fy, this.frameWidth, this.frameHeight, ox, oy, Math.floor(this.frameWidth * this.scale), Math.floor(this.frameHeight * this.scale));
         Rabbit.Instance.context.globalAlpha = 1;
         Rabbit.Instance.context.restore();
-
     }
 
     place(pos) {
@@ -1663,7 +1864,7 @@ export class Tilemap extends GraphicComponent {
     tileW: number;
     tileH: number;
     image: HTMLImageElement;
-    canvas: Canvas;
+    canvas: SplashCanvas;
     tiles: number[];
     constructor(x, y, image, tw, th, gw, gh, tiles) {
         super();
@@ -1686,7 +1887,7 @@ export class Tilemap extends GraphicComponent {
 
 
     build() {
-        this.canvas = new Canvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
+        this.canvas = new SplashCanvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
 
         for (var y = 0; y < this.gridH; ++y) {
             for (var x = 0; x < this.gridW; ++x) {
@@ -1737,10 +1938,11 @@ export class Tilemap extends GraphicComponent {
 }
 
 /**
- * @class Canvas类
+ * @class 渲染Canvas类
+ * @deprecated
  */
 @rClass
-export class Canvas extends GraphicComponent {
+export class SplashCanvas extends GraphicComponent {
 
     alpha: number;
 
@@ -1802,4 +2004,4 @@ export class EngineTools {
         if (!flag) console.warn("deleteItemFromList方法未找到要删除的元素");
     }
 }
-// export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+// export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

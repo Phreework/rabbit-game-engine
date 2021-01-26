@@ -11,9 +11,7 @@ class IsoTilemap extends GraphicComponent {
 	tileH: number;
 	image: HTMLImageElement;
 	tiles: any[];
-	init(x, y, gw, gh, tw, th, image){
-		this.x = x;
-		this.y = y;
+	init( gw, gh, tw, th, image) {
 		this.gridW = gw;
 		this.gridH = gh;
 		this.tileW = tw;
@@ -54,7 +52,10 @@ class IsoTilemap extends GraphicComponent {
 		this.tiles[ty * this.gridW + tx] = tile;
 	}
 
-	update(dtime) { };
+	update(dtime) {
+		this.x = this.entity.absX;
+		this.y = this.entity.absY;
+	};
 }
 
 class Terrain extends Component {
@@ -62,7 +63,7 @@ class Terrain extends Component {
 	init() {
 		this.graphic = this.entity.addComponent(IsoTilemap);
 		const imageUrl = 'graphics/isometric/tiles.png';
-		this.graphic.init(0, 0, 12, 12, TILE_W, TILE_H, imageUrl);;
+		this.graphic.init(12, 12, TILE_W, TILE_H, imageUrl);;
 	}
 
 
@@ -74,15 +75,13 @@ class Terrain extends Component {
 class Town extends Component {
 	gridX: number;
 	gridY: number;
-	init(gx, gy){
+	init(gx, gy) {
 		this.gridX = gx;
 		this.gridY = gy;
 
 		this.entity.x = (gx - gy) * TILE_W / 2;
 		this.entity.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
 		const image = this.entity.addComponent(RabImage);
-		image.x = this.entity.x;
-		image.y = this.entity.y;
 		image.imageUrl = 'graphics/isometric/town.png';
 	}
 
@@ -94,7 +93,7 @@ class Unit extends Component {
 	image: RabImage;
 	banner: RabImage;
 
-	init(gx, gy, banner){
+	init(gx, gy, banner) {
 		this.gridX = gx;
 		this.gridY = gy;
 
@@ -103,14 +102,10 @@ class Unit extends Component {
 
 		const imageEntity = new Entity();
 		this.image = imageEntity.addComponent(RabImage);
-		this.image.x = this.entity.x;
-		this.image.y = this.entity.y;
 		this.image.imageUrl = 'graphics/isometric/warchap.png';
 
 		const bannerEntity = new Entity();
 		this.banner = bannerEntity.addComponent(RabImage);
-		this.banner.x = this.entity.x;
-		this.banner.y = this.entity.y;
 		this.banner.imageUrl = 'graphics/isometric/' + banner + '.png';
 
 		const list = this.entity.addComponent(GraphicList);
@@ -122,7 +117,7 @@ class City extends Component {
 	gridX: number;
 	gridY: number;
 	image: RabImage;
-	init(gx, gy){
+	init(gx, gy) {
 		this.gridX = gx;
 		this.gridY = gy;
 
@@ -134,8 +129,6 @@ class City extends Component {
 
 		this.image = this.entity.addComponent(RabImage);
 		this.image.imageUrl = ('graphics/isometric/city.png');
-		this.image.x = this.entity.x;
-		this.image.y = this.entity.y;
 	}
 }
 
@@ -149,10 +142,10 @@ export function main(): World {
 		terrain.init();
 		terrain.setTile(0, 5, 0);
 		world.add(terrainNode);
-		
+
 		const townNode1 = new Entity();
 		const town1 = townNode1.addComponent(Town);
-		town1.init(0,5);
+		town1.init(0, 5);
 		world.add(townNode1);
 
 		const unitNode1 = new Entity();
@@ -174,9 +167,9 @@ export function main(): World {
 
 		const cityNode = new Entity();
 		const city = cityNode.addComponent(City);
-		city.init(0,0);
+		city.init(0, 0);
 		world.add(cityNode);
-		
+
 	}
 	return world;
 }

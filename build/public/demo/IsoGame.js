@@ -13,9 +13,7 @@ class IsoTilemap extends GraphicComponent {
     this.tiles = void 0;
   }
 
-  init(x, y, gw, gh, tw, th, image) {
-    this.x = x;
-    this.y = y;
+  init(gw, gh, tw, th, image) {
     this.gridW = gw;
     this.gridH = gh;
     this.tileW = tw;
@@ -52,7 +50,10 @@ class IsoTilemap extends GraphicComponent {
     this.tiles[ty * this.gridW + tx] = tile;
   }
 
-  update(dtime) {}
+  update(dtime) {
+    this.x = this.entity.absX;
+    this.y = this.entity.absY;
+  }
 
 }
 
@@ -65,7 +66,7 @@ class Terrain extends Component {
   init() {
     this.graphic = this.entity.addComponent(IsoTilemap);
     const imageUrl = 'graphics/isometric/tiles.png';
-    this.graphic.init(0, 0, 12, 12, TILE_W, TILE_H, imageUrl);
+    this.graphic.init(12, 12, TILE_W, TILE_H, imageUrl);
     ;
   }
 
@@ -88,8 +89,6 @@ class Town extends Component {
     this.entity.x = (gx - gy) * TILE_W / 2;
     this.entity.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
     const image = this.entity.addComponent(RabImage);
-    image.x = this.entity.x;
-    image.y = this.entity.y;
     image.imageUrl = 'graphics/isometric/town.png';
   }
 
@@ -111,13 +110,9 @@ class Unit extends Component {
     this.entity.y = (gx + gy) * TILE_H / 2 - 32;
     const imageEntity = new Entity();
     this.image = imageEntity.addComponent(RabImage);
-    this.image.x = this.entity.x;
-    this.image.y = this.entity.y;
     this.image.imageUrl = 'graphics/isometric/warchap.png';
     const bannerEntity = new Entity();
     this.banner = bannerEntity.addComponent(RabImage);
-    this.banner.x = this.entity.x;
-    this.banner.y = this.entity.y;
     this.banner.imageUrl = 'graphics/isometric/' + banner + '.png';
     const list = this.entity.addComponent(GraphicList);
     list.setGraphics([this.banner, this.image]);
@@ -142,8 +137,6 @@ class City extends Component {
     this.entity.y = (gx + gy) * TILE_H / 2 - height + TILE_H * 2;
     this.image = this.entity.addComponent(RabImage);
     this.image.imageUrl = 'graphics/isometric/city.png';
-    this.image.x = this.entity.x;
-    this.image.y = this.entity.y;
   }
 
 }
