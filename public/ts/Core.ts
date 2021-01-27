@@ -791,10 +791,30 @@ export interface IVec2 {
 @rClass
 export class Transform extends Component {
 
+
+    constructor(x?: number, y?: number, width?: number, height?: number, scalex?: number, scaley?: number) {
+        super();
+        this.x = x ? x : this.x;
+        this.y = y ? y : this.y;
+        this.width = width ? width : this.width;
+        this.height = height ? height : this.height;
+        this.scaleX = scalex ? scalex : this.scaleX;
+        this.scaleY = scaley ? scaley : this.scaleY;
+    }
+
+    init(x?: number, y?: number, width?: number, height?: number, scalex?: number, scaley?: number) {
+        this.x = x ? x : this.x;
+        this.y = y ? y : this.y;
+        this.width = width ? width : this.width;
+        this.height = height ? height : this.height;
+        this.scaleX = scalex ? scalex : this.scaleX;
+        this.scaleY = scaley ? scaley : this.scaleY;
+    }
+
     /**
      * 世界坐标
      */
-    _worldPosition: Vec3;
+    _worldPosition: Vec3 = new Vec3();
 
     /**
      *  @get 返回世界坐标
@@ -808,6 +828,7 @@ export class Transform extends Component {
      */
     set worldPosition(position: Vec3) {
         this._worldPosition = position;
+        this.updateLocalPosition();
     }
 
     /**
@@ -822,6 +843,7 @@ export class Transform extends Component {
      */
     set worldX(value: number) {
         this._worldPosition.x = value;
+        this.updateLocalPosition();
     }
 
     /**
@@ -836,6 +858,7 @@ export class Transform extends Component {
      */
     set worldY(value: number) {
         this._worldPosition.y = value;
+        this.updateLocalPosition();
     }
 
     /**
@@ -850,12 +873,13 @@ export class Transform extends Component {
      */
     set worldZ(value: number) {
         this._worldPosition.z = value;
+        this.updateLocalPosition();
     }
 
     /**
      * 本地坐标
      */
-    _position: Vec3;
+    _position: Vec3 = new Vec3();;
 
     /**
      *  @get 返回本地坐标
@@ -869,6 +893,7 @@ export class Transform extends Component {
      */
     set position(position: Vec3) {
         this._position = position;
+        this.updateWorldPosition();
     }
 
     /**
@@ -883,6 +908,7 @@ export class Transform extends Component {
      */
     set x(x: number) {
         this._position.x = x;
+        this.updateWorldPosition();
     }
 
     /**
@@ -897,6 +923,7 @@ export class Transform extends Component {
      */
     set y(y: number) {
         this._position.y = y;
+        this.updateWorldPosition();
     }
 
     /**
@@ -911,12 +938,13 @@ export class Transform extends Component {
      */
     set z(z: number) {
         this._position.z = z;
+        this.updateWorldPosition();
     }
 
     /**
      * 世界坐标系角度
      */
-    _worldAngle: number;
+    _worldAngle: number = 0;
 
     /**
      * @get 获得世界坐标系角度
@@ -935,7 +963,7 @@ export class Transform extends Component {
     /**
      * 本地坐标系角度
      */
-    _angle: number;
+    _angle: number = 0;
 
     /**
      * @get 获得本地坐标系角度
@@ -954,7 +982,7 @@ export class Transform extends Component {
     /**
      * 2d模式锚点
      */
-    _anchor: Vec2;
+    _anchor: Vec2 = new Vec2(0.5, 0.5);
 
     /**
      * @get 获得锚点
@@ -973,7 +1001,7 @@ export class Transform extends Component {
     /**
      * 宽高对象
      */
-    _size: Vec2;
+    _size: Vec2 = new Vec2(0, 0);
 
     /**
      * 返回宽高对象
@@ -1049,7 +1077,7 @@ export class Transform extends Component {
     /**
      * @description 本地缩放尺寸
      */
-    _scale: Vec2;
+    _scale: Vec2 = new Vec2(1, 1);
 
     /**
      * @description 获得世界缩放尺寸
@@ -1096,7 +1124,7 @@ export class Transform extends Component {
     /**
      * @description 世界缩放尺寸
      */
-    _worldScale: Vec2;
+    _worldScale: Vec2 = new Vec2(1, 1);
 
     /**
      * @description 获得世界缩放尺寸
@@ -1153,45 +1181,46 @@ export class Transform extends Component {
     tween() {
 
     }
+
+    setPosition(x: number);
+    setPosition(x: number, y: number);
+    setPosition(vec2: IVec2);
+    setPosition(value1?: IVec2 | number, value2?: number) {
+        if (typeof value1 === "number") {
+            this.position.x = value1;
+            this.position.y = (value2 || value2 == 0) ? value2 : this.y;
+        } else {
+            this.position.x = value1.x;
+            this.position.y = value1.y;
+        }
+        this.updateWorldPosition();
+    }
+    /**
+     * @todo 感觉parent为空的时候对坐标的处理还有些问题
+     */
+    updateWorldPosition() {
+        this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
+        this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+        this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+    }
+    updateLocalPosition() {
+        this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
+        this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldZ;
+        this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+    }
+
+    getRect(): Rect {
+        return new Rect(this.x, this.y, this.width, this.height);
+    }
+
 }
 @rClass
 export class Entity extends RabObject {
 
     /**
-     * 实体的相对x坐标
+     * 实体的变换组件
      */
-    _x: number;
-
-    set x(value: number) {
-        this.setPosition(value);
-    }
-    get x() {
-        return this._x;
-    }
-    /**
-     * 实体的相对y坐标
-     */
-    _y: number;
-    set y(value: number) {
-        this.setPosition(this._x, value);
-    }
-    get y() {
-        return this._y;
-    }
-    /**
-     * 实体的绝对x坐标
-     */
-    absX: number;
-
-    /**
-     * 实体的绝对y坐标
-     */
-    absY: number;
-
-    /**
-     * 实体的盒子
-     */
-    rect: Rect;
+    transform: Transform;
 
     /**
      * 实体的渲染组件
@@ -1269,14 +1298,11 @@ export class Entity extends RabObject {
      * @param y 实体y坐标（可选）
      * @todo name的命名制定一套规则
      */
-    constructor(name?: string, x?: number, y?: number) {
+    constructor(name?: string, x?: number, y?: number, width?: number, height?: number, scalex?: number, scaley?: number) {
         super();
         this.name = name ? name : "entity" + Math.floor(Math.random() * 100000);
-        this.rect = new Rect(0, 0, 0, 0);
-        this.x = x ? x : 0;
-        this.y = y ? y : 0;
-        this.rect.x = this.x;
-        this.rect.y = this.y;
+        this.transform = this.addComponent(Transform);
+        this.transform.init(x, y, width, height, scalex, scaley);
         this.type = "entity";
         this.world = null;
     }
@@ -1292,25 +1318,7 @@ export class Entity extends RabObject {
     onAdd() {
 
     }
-    setPosition(x: number);
-    setPosition(x: number, y: number);
-    setPosition(vec2: IVec2);
-    setPosition(value1?: IVec2 | number, value2?: number) {
-        if (typeof value1 === "number") {
-            this._x = value1;
-            this._y = (value2 || value2 == 0) ? value2 : this.y;
-        } else {
-            this._x = value1.x;
-            this._y = value1.y;
-        }
-        this.updateAbsPos();
-    }
-    updateAbsPos() {
-        this.absX = this.parent ? this.parent.absX + this.x : this.x;
-        this.absY = this.parent ? this.parent.absY + this.y : this.y;
-        this.rect.x = this.absX;
-        this.rect.y = this.absY;
-    }
+
     collide(rect: Rect) {
         return false;
     }
@@ -1404,9 +1412,10 @@ export class Entity extends RabObject {
         if (!child) return console.warn("要添加的子节点不存在");
         if (child.parent) child.parent.removeChild(this);
         child._parent = this;
+        child.transform.parent = this.transform;
         this.children.push(child);
         this.world.add(child);
-        child.updateAbsPos();
+        child.transform.updateWorldPosition();
     }
 
     /**
@@ -1442,10 +1451,6 @@ export class Entity extends RabObject {
         } else {
             parent.addChild(this);
         }
-    }
-
-    getBoundingBox(): BoundingBox {
-        return this.rect.getBoundingBox();
     }
 }
 @rClass
@@ -1761,11 +1766,14 @@ export class Text extends GraphicComponent {
     update(time) {
         // console.log("RabText update 调用")
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
-        this.x = this.entity.absX;
-        this.y = this.entity.absY;
+        this.x = this.entity.transform.worldX;
+        this.y = this.entity.transform.worldY;
     }
 }
 
+/**
+ * @deprecated 已弃用
+ */
 @rClass
 export class BoundingBox extends RabObject {
     left: number;
@@ -1872,10 +1880,6 @@ export class Rect extends RabObject {
 
     top() {
         return this.y;
-    }
-
-    getBoundingBox(): BoundingBox {
-        return new BoundingBox(this);
     }
 }
 @rClass
@@ -2036,8 +2040,8 @@ export class RabImage extends GraphicComponent {
             Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
         Rabbit.Instance.context.clearRect(0, 0, Math.round(this.w), Math.round(this.h));
         Rabbit.Instance.context.restore();
-        this.x = this.entity.absX;
-        this.y = this.entity.absY;
+        this.x = this.entity.transform.worldX;
+        this.y = this.entity.transform.worldY;
         this._x = this.x;
         this._y = this.y;
         this.w = this.image.width;
@@ -2177,8 +2181,7 @@ export class Sprite extends GraphicComponent {
         this.frame = 0;
         this.time = 0;
         this.loop = loop;
-        if (loop == undefined)
-            this.loop = true;
+        if (loop == undefined) this.loop = true;
     }
 
     update(dtime) {

@@ -726,18 +726,37 @@ export let Vec3 = rClass(_class15 = (_temp7 = class Vec3 {
 
 }, _temp7)) || _class15;
 export let Transform = rClass(_class17 = (_temp8 = class Transform extends Component {
-  constructor(...args) {
-    super(...args);
-    this._worldPosition = void 0;
-    this._position = void 0;
-    this._worldAngle = void 0;
-    this._angle = void 0;
-    this._anchor = void 0;
-    this._size = void 0;
-    this._scale = void 0;
-    this._worldScale = void 0;
+  constructor(x, y, width, height, scalex, scaley) {
+    super();
+    this._worldPosition = new Vec3();
+    this._position = new Vec3();
+    this._worldAngle = 0;
+    this._angle = 0;
+    this._anchor = new Vec2(0.5, 0.5);
+    this._size = new Vec2(0, 0);
+    this._scale = new Vec2(1, 1);
+    this._worldScale = new Vec2(1, 1);
     this.parent = void 0;
+    this.x = x ? x : this.x;
+    this.y = y ? y : this.y;
+    this.width = width ? width : this.width;
+    this.height = height ? height : this.height;
+    this.scaleX = scalex ? scalex : this.scaleX;
+    this.scaleY = scaley ? scaley : this.scaleY;
   }
+
+  init(x, y, width, height, scalex, scaley) {
+    this.x = x ? x : this.x;
+    this.y = y ? y : this.y;
+    this.width = width ? width : this.width;
+    this.height = height ? height : this.height;
+    this.scaleX = scalex ? scalex : this.scaleX;
+    this.scaleY = scaley ? scaley : this.scaleY;
+  }
+  /**
+   * 世界坐标
+   */
+
 
   /**
    *  @get 返回世界坐标
@@ -752,6 +771,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set worldPosition(position) {
     this._worldPosition = position;
+    this.updateLocalPosition();
   }
   /**
    * @get 获得世界坐标下x的值
@@ -768,6 +788,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set worldX(value) {
     this._worldPosition.x = value;
+    this.updateLocalPosition();
   }
   /**
    * @get 获得世界坐标下y的值
@@ -784,6 +805,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set worldY(value) {
     this._worldPosition.y = value;
+    this.updateLocalPosition();
   }
   /**
    * @get 获得世界坐标下z的值
@@ -800,6 +822,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set worldZ(value) {
     this._worldPosition.z = value;
+    this.updateLocalPosition();
   }
   /**
    * 本地坐标
@@ -819,6 +842,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set position(position) {
     this._position = position;
+    this.updateWorldPosition();
   }
   /**
    * @get 获得本地坐标下x的值
@@ -835,6 +859,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set x(x) {
     this._position.x = x;
+    this.updateWorldPosition();
   }
   /**
    * @get 获得本地坐标下y的值
@@ -851,6 +876,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set y(y) {
     this._position.y = y;
+    this.updateWorldPosition();
   }
   /**
    * @get 获得本地坐标下z的值
@@ -867,6 +893,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
 
   set z(z) {
     this._position.z = z;
+    this.updateWorldPosition();
   }
   /**
    * 世界坐标系角度
@@ -1122,35 +1149,67 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
    */
   tween() {}
 
+  setPosition(value1, value2) {
+    if (typeof value1 === "number") {
+      this.position.x = value1;
+      this.position.y = value2 || value2 == 0 ? value2 : this.y;
+    } else {
+      this.position.x = value1.x;
+      this.position.y = value1.y;
+    }
+
+    this.updateWorldPosition();
+  }
+  /**
+   * @todo 感觉parent为空的时候对坐标的处理还有些问题
+   */
+
+
+  updateWorldPosition() {
+    this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
+    this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+    this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+  }
+
+  updateLocalPosition() {
+    this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
+    this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldZ;
+    this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+  }
+
+  getRect() {
+    return new Rect(this.x, this.y, this.width, this.height);
+  }
+
 }, _temp8)) || _class17;
 export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
   /**
-   * 实体的相对x坐标
+   * 实体的变换组件
    */
-  set x(value) {
-    this.setPosition(value);
-  }
 
-  get x() {
-    return this._x;
-  }
   /**
-   * 实体的相对y坐标
+   * 实体的渲染组件
    */
 
-
-  set y(value) {
-    this.setPosition(this._x, value);
-  }
-
-  get y() {
-    return this._y;
-  }
   /**
-   * 实体的绝对x坐标
+   * 实体的类型字符串
    */
 
+  /**
+   * 实体所属场景
+   */
 
+  /**
+   * 实体的名称
+   */
+
+  /**
+   * 实体的id
+   */
+
+  /**
+   * 实体是否激活
+   */
   get active() {
     return this._active;
   }
@@ -1193,13 +1252,9 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
    */
 
 
-  constructor(name, x, y) {
+  constructor(name, x, y, width, height, scalex, scaley) {
     super();
-    this._x = void 0;
-    this._y = void 0;
-    this.absX = void 0;
-    this.absY = void 0;
-    this.rect = void 0;
+    this.transform = void 0;
     this.graphic = void 0;
     this.type = void 0;
     this.world = void 0;
@@ -1212,11 +1267,8 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
     this.children = [];
     this._parent = null;
     this.name = name ? name : "entity" + Math.floor(Math.random() * 100000);
-    this.rect = new Rect(0, 0, 0, 0);
-    this.x = x ? x : 0;
-    this.y = y ? y : 0;
-    this.rect.x = this.x;
-    this.rect.y = this.y;
+    this.transform = this.addComponent(Transform);
+    this.transform.init(x, y, width, height, scalex, scaley);
     this.type = "entity";
     this.world = null;
   }
@@ -1230,25 +1282,6 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
   onDestroy() {}
 
   onAdd() {}
-
-  setPosition(value1, value2) {
-    if (typeof value1 === "number") {
-      this._x = value1;
-      this._y = value2 || value2 == 0 ? value2 : this.y;
-    } else {
-      this._x = value1.x;
-      this._y = value1.y;
-    }
-
-    this.updateAbsPos();
-  }
-
-  updateAbsPos() {
-    this.absX = this.parent ? this.parent.absX + this.x : this.x;
-    this.absY = this.parent ? this.parent.absY + this.y : this.y;
-    this.rect.x = this.absX;
-    this.rect.y = this.absY;
-  }
 
   collide(rect) {
     return false;
@@ -1350,9 +1383,10 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
     if (!child) return console.warn("要添加的子节点不存在");
     if (child.parent) child.parent.removeChild(this);
     child._parent = this;
+    child.transform.parent = this.transform;
     this.children.push(child);
     this.world.add(child);
-    child.updateAbsPos();
+    child.transform.updateWorldPosition();
   }
   /**
    * 移除一个子实体
@@ -1392,10 +1426,6 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
     } else {
       parent.addChild(this);
     }
-  }
-
-  getBoundingBox() {
-    return this.rect.getBoundingBox();
   }
 
 }, _temp9)) || _class19;
@@ -1726,11 +1756,15 @@ export let Text = rClass(_class30 = (_temp14 = _class31 = class Text extends Gra
   update(time) {
     // console.log("RabText update 调用")
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
-    this.x = this.entity.absX;
-    this.y = this.entity.absY;
+    this.x = this.entity.transform.worldX;
+    this.y = this.entity.transform.worldY;
   }
 
 }, _class31.TextAlignType = TextAlignType, _temp14)) || _class30;
+/**
+ * @deprecated 已弃用
+ */
+
 export let BoundingBox = rClass(_class32 = (_temp15 = class BoundingBox extends RabObject {
   constructor(v1, v2, v3, v4) {
     super();
@@ -1833,10 +1867,6 @@ export let Rect = rClass(_class34 = (_temp16 = class Rect extends RabObject {
 
   top() {
     return this.y;
-  }
-
-  getBoundingBox() {
-    return new BoundingBox(this);
   }
 
 }, _temp16)) || _class34;
@@ -1991,8 +2021,8 @@ export let RabImage = rClass(_class40 = (_temp19 = class RabImage extends Graphi
     if (this.ignoreCamera) Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));else Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
     Rabbit.Instance.context.clearRect(0, 0, Math.round(this.w), Math.round(this.h));
     Rabbit.Instance.context.restore();
-    this.x = this.entity.absX;
-    this.y = this.entity.absY;
+    this.x = this.entity.transform.worldX;
+    this.y = this.entity.transform.worldY;
     this._x = this.x;
     this._y = this.y;
     this.w = this.image.width;

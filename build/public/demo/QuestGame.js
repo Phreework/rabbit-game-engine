@@ -7,8 +7,8 @@ class Robot extends Component {
   }
 
   init(x, y) {
-    this.entity.x = x;
-    this.entity.y = y;
+    this.entity.transform.x = x;
+    this.entity.transform.y = y;
     this.image = this.entity.addComponent(RabImage);
     this.image.imageUrl = "graphics/robot.png";
   }
@@ -28,19 +28,19 @@ export function main() {
 
       switch (key) {
         case KeyType.A:
-          entity.x -= 16;
+          entity.transform.x -= 16;
           break;
 
         case KeyType.D:
-          entity.x += 16;
+          entity.transform.x += 16;
           break;
 
         case KeyType.W:
-          entity.y -= 16;
+          entity.transform.y -= 16;
           break;
 
         case KeyType.S:
-          entity.y += 16;
+          entity.transform.y += 16;
           break;
 
         default:

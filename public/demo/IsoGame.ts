@@ -53,8 +53,8 @@ class IsoTilemap extends GraphicComponent {
 	}
 
 	update(dtime) {
-		this.x = this.entity.absX;
-		this.y = this.entity.absY;
+		this.x = this.entity.transform.worldPosition.x;
+		this.y = this.entity.transform.worldPosition.y;
 	};
 }
 
@@ -79,8 +79,8 @@ class Town extends Component {
 		this.gridX = gx;
 		this.gridY = gy;
 
-		this.entity.x = (gx - gy) * TILE_W / 2;
-		this.entity.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
+		this.entity.transform.x = (gx - gy) * TILE_W / 2;
+		this.entity.transform.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
 		const image = this.entity.addComponent(RabImage);
 		image.imageUrl = 'graphics/isometric/town.png';
 	}
@@ -97,8 +97,8 @@ class Unit extends Component {
 		this.gridX = gx;
 		this.gridY = gy;
 
-		this.entity.x = (gx - gy) * TILE_W / 2 + 16;
-		this.entity.y = (gx + gy) * TILE_H / 2 - 32;
+		this.entity.transform.x = (gx - gy) * TILE_W / 2 + 16;
+		this.entity.transform.y = (gx + gy) * TILE_H / 2 - 32;
 
 		const imageEntity = new Entity();
 		this.image = imageEntity.addComponent(RabImage);
@@ -124,8 +124,8 @@ class City extends Component {
 		let width = 128;
 		let height = 80;
 
-		this.entity.x = (gx - gy) * TILE_W / 2 - width / 2 + TILE_W / 2;
-		this.entity.y = (gx + gy) * TILE_H / 2 - height + TILE_H * 2;
+		this.entity.transform.x = (gx - gy) * TILE_W / 2 - width / 2 + TILE_W / 2;
+		this.entity.transform.y = (gx + gy) * TILE_H / 2 - height + TILE_H * 2;
 
 		this.image = this.entity.addComponent(RabImage);
 		this.image.imageUrl = ('graphics/isometric/city.png');
