@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _class22, _temp10, _class24, _temp11, _class26, _temp12, _class28, _class29, _temp13, _class30, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _temp10, _class23, _class24, _temp11, _class26, _temp12, _class28, _temp13, _class30, _class31, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _class43, _temp20, _class44, _temp21, _class46, _temp22, _class48, _temp23, _class50;
 
 /** 
  * --------------------------------------------------------
@@ -93,7 +93,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
    * 返回Canvas的矩形框
    */
   get winSize() {
-    return new Rect(0, 0, this.canvas.width, this.canvas.height);
+    return new Rect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
   }
   /**
    * 游戏的Html画布
@@ -104,6 +104,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
    * Rabbit运行环境构造器函数
    */
   constructor() {
+    this.htmlCanvas = null;
     this.canvas = null;
     this.camera = null;
     this.context = null;
@@ -126,14 +127,12 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.entitySystem = void 0;
     this.compSystem = void 0;
     this.eventSystem = void 0;
-
-    if (!Rabbit.Instance) {
-      Rabbit.Instance = this;
-      rabbit = Rabbit.Instance;
-      this.entitySystem = new EntitySystem();
-      this.compSystem = new CompSystem();
-      this.eventSystem = new EventSystem();
-    }
+    if (Rabbit.Instance) return;
+    Rabbit.Instance = this;
+    rabbit = Rabbit.Instance;
+    this.entitySystem = new EntitySystem();
+    this.compSystem = new CompSystem();
+    this.eventSystem = new EventSystem();
   }
   /**
    * 初始化游戏
@@ -143,40 +142,21 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
   init(canvasid) {
     canvasid = canvasid ? canvasid : 'rabbit-canvas';
-    const canvas = document.getElementById(canvasid);
-    this.canvas = canvas;
-    this.context = canvas.getContext('2d');
-
-    this.canvas.onmousedown = e => {
-      Rabbit.Instance._canvasMouseDown(e);
-    };
-
-    document.onkeydown = e => {
-      Rabbit.Instance.keyDown(e);
-    };
-
-    document.onkeyup = e => {
-      Rabbit.Instance.keyUp(e);
-    };
-
-    this.canvas.onmousemove = e => {
-      Rabbit.Instance.mouseMove(e);
-    };
-
-    this.canvas.onmouseout = e => {
-      Rabbit.Instance.mouseOut(e);
-    };
+    const htmlCanvas = document.getElementById(canvasid);
+    this.htmlCanvas = htmlCanvas;
+    this.context = htmlCanvas.getContext('2d');
+    this.eventSystem.initEventRegister();
 
     if (document.defaultView && document.defaultView.getComputedStyle) {
-      const paddingLeft = +document.defaultView.getComputedStyle(canvas, null)['paddingLeft'] || 0;
-      const paddingTop = +document.defaultView.getComputedStyle(canvas, null)['paddingTop'] || 0;
-      const borderLeft = +document.defaultView.getComputedStyle(canvas, null)['borderLeftWidth'] || 0;
-      const borderTop = +document.defaultView.getComputedStyle(canvas, null)['borderTopWidth'] || 0;
+      const paddingLeft = +document.defaultView.getComputedStyle(htmlCanvas, null)['paddingLeft'] || 0;
+      const paddingTop = +document.defaultView.getComputedStyle(htmlCanvas, null)['paddingTop'] || 0;
+      const borderLeft = +document.defaultView.getComputedStyle(htmlCanvas, null)['borderLeftWidth'] || 0;
+      const borderTop = +document.defaultView.getComputedStyle(htmlCanvas, null)['borderTopWidth'] || 0;
       this.offset = [paddingLeft + borderLeft, paddingTop + borderTop];
     }
 
-    this.canvas.width = this.canvas.clientWidth;
-    this.canvas.height = this.canvas.clientHeight;
+    this.htmlCanvas.width = this.htmlCanvas.clientWidth;
+    this.htmlCanvas.height = this.htmlCanvas.clientHeight;
     this.resetCamera();
     console.log("rabbit 初始化完成");
   }
@@ -284,7 +264,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
   _mousePosition(e) {
     let ox = 0,
         oy = 0;
-    const element = this.canvas;
+    const element = this.htmlCanvas;
 
     if (element.offsetParent) {
       do {
@@ -388,8 +368,8 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
 
   setBackground(url) {
-    this.canvas.style.backgroundImage = 'url(' + url + ')';
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.htmlCanvas.style.backgroundImage = 'url(' + url + ')';
+    this.context.clearRect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
   }
   /**
    * 设置场景为下次运行的场景
@@ -460,7 +440,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     if (dtime > this.maxFrameTime) dtime = this.maxFrameTime;
     this.time = Date.now();
     this.world.update(dtime);
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.clearRect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
     this.world.draw();
     this.mouse.pressed = false;
 
@@ -498,7 +478,8 @@ export let EntitySystem = rClass(_class3 = (_temp2 = _class4 = class EntitySyste
     world.entities.push(e);
     e.id = world.maxId++;
     e.world = world;
-    e.added();
+    if (e.isRemoved == true) e.isRemoved = false;
+    e.onAdd();
   }
   /**
    * 为场景中所有实体派发绘制事件
@@ -519,14 +500,25 @@ export let EntitySystem = rClass(_class3 = (_temp2 = _class4 = class EntitySyste
     }
   }
   /**
+   * 在该帧结束时删除该实体
+   * @param e 要删除的实体
+   */
+
+
+  destroyEntity(e) {
+    e.onDestroy();
+    Rabbit.Instance.world.preDestroys.push(e);
+  }
+  /**
    * 在该帧结束时移除该实体
    * @param e 要移除的实体
    */
 
 
-  remove(e) {
-    e.removed();
-    Rabbit.Instance.world.removed.push(e);
+  removeEntity(e) {
+    e.isRemoved = true;
+    e.parent = null;
+    Rabbit.Instance.world.removes.push(e);
   }
 
 }, _class4.Instance = void 0, _temp2)) || _class3;
@@ -547,6 +539,28 @@ export let CompSystem = rClass(_class5 = (_temp3 = _class6 = class CompSystem {
  */
 
 export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem {
+  initEventRegister() {
+    Rabbit.Instance.htmlCanvas.onmousedown = e => {
+      Rabbit.Instance._canvasMouseDown(e);
+    };
+
+    document.onkeydown = e => {
+      Rabbit.Instance.keyDown(e);
+    };
+
+    document.onkeyup = e => {
+      Rabbit.Instance.keyUp(e);
+    };
+
+    Rabbit.Instance.htmlCanvas.onmousemove = e => {
+      Rabbit.Instance.mouseMove(e);
+    };
+
+    Rabbit.Instance.htmlCanvas.onmouseout = e => {
+      Rabbit.Instance.mouseOut(e);
+    };
+  }
+
   constructor() {
     EventSystem.Instance = this;
   }
@@ -562,7 +576,7 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
 
   update(dtime) {
     const entities = Rabbit.Instance.world.entities;
-    const removed = Rabbit.Instance.world.removed;
+    const preDestroys = Rabbit.Instance.world.preDestroys;
 
     for (let i = 0; i < entities.length; ++i) {
       const entity = entities[i];
@@ -571,13 +585,13 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
     } //可能开销比较大？
 
 
-    for (let j = 0; j < removed.length; ++j) {
+    for (let j = 0; j < preDestroys.length; ++j) {
       for (let i = 0; i < entities.length; ++i) {
-        if (entities[i] == removed[j]) entities.splice(i, 1);
+        if (entities[i] == preDestroys[j]) entities.splice(i, 1);
       }
     }
 
-    Rabbit.Instance.world.removed = [];
+    Rabbit.Instance.world.preDestroys = [];
   }
 
   keyDown(key) {
@@ -660,21 +674,456 @@ export let Component = rClass(_class10 = (_temp5 = class Component extends RabOb
 }, _temp5)) || _class10;
 export let TestComponent = rClass(_class12 = class TestComponent extends Component {}) || _class12;
 export let Vec2 = rClass(_class13 = (_temp6 = class Vec2 {
-  constructor() {
-    this.x = void 0;
-    this.y = void 0;
+  get x() {
+    return this._x;
+  }
+
+  set x(x) {
+    this._x = x;
+  }
+
+  get width() {
+    return this._x;
+  }
+
+  set width(width) {
+    this._x = width;
+  }
+
+  get y() {
+    return this._y;
+  }
+
+  set y(y) {
+    this._y = y;
+  }
+
+  get height() {
+    return this._y;
+  }
+
+  set height(height) {
+    this._y = height;
+  }
+
+  constructor(x, y) {
+    this._x = void 0;
+    this._y = void 0;
+    this.x = x ? x : 0;
+    this.y = y ? y : 0;
   }
 
 }, _temp6)) || _class13;
 export let Vec3 = rClass(_class15 = (_temp7 = class Vec3 {
-  constructor() {
+  constructor(x, y, z) {
     this.x = void 0;
     this.y = void 0;
     this.z = void 0;
+    this.x = x ? x : 0;
+    this.y = y ? y : 0;
+    this.z = z ? z : 0;
   }
 
 }, _temp7)) || _class15;
-export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
+export let Transform = rClass(_class17 = (_temp8 = class Transform extends Component {
+  constructor(...args) {
+    super(...args);
+    this._worldPosition = void 0;
+    this._position = void 0;
+    this._worldAngle = void 0;
+    this._angle = void 0;
+    this._anchor = void 0;
+    this._size = void 0;
+    this._scale = void 0;
+    this._worldScale = void 0;
+    this.parent = void 0;
+  }
+
+  /**
+   *  @get 返回世界坐标
+   */
+  get worldPosition() {
+    return this._worldPosition;
+  }
+  /**
+   * @set 设置世界坐标
+   */
+
+
+  set worldPosition(position) {
+    this._worldPosition = position;
+  }
+  /**
+   * @get 获得世界坐标下x的值
+   */
+
+
+  get worldX() {
+    return this._worldPosition.x;
+  }
+  /**
+   * @set 设置世界坐标下x的值
+   */
+
+
+  set worldX(value) {
+    this._worldPosition.x = value;
+  }
+  /**
+   * @get 获得世界坐标下y的值
+   */
+
+
+  get worldY() {
+    return this._worldPosition.y;
+  }
+  /**
+   * @set 设置世界坐标下y的值
+   */
+
+
+  set worldY(value) {
+    this._worldPosition.y = value;
+  }
+  /**
+   * @get 获得世界坐标下z的值
+   */
+
+
+  get worldZ() {
+    return this._worldPosition.z;
+  }
+  /**
+   * @set 设置世界坐标下z的值
+   */
+
+
+  set worldZ(value) {
+    this._worldPosition.z = value;
+  }
+  /**
+   * 本地坐标
+   */
+
+
+  /**
+   *  @get 返回本地坐标
+   */
+  get position() {
+    return this._position;
+  }
+  /**
+   * @set 设置本地坐标
+   */
+
+
+  set position(position) {
+    this._position = position;
+  }
+  /**
+   * @get 获得本地坐标下x的值
+   */
+
+
+  get x() {
+    return this._position.x;
+  }
+  /**
+   * @set 设置本地坐标下x的值
+   */
+
+
+  set x(x) {
+    this._position.x = x;
+  }
+  /**
+   * @get 获得本地坐标下y的值
+   */
+
+
+  get y() {
+    return this._position.y;
+  }
+  /**
+   * @set 设置本地坐标下y的值
+   */
+
+
+  set y(y) {
+    this._position.y = y;
+  }
+  /**
+   * @get 获得本地坐标下z的值
+   */
+
+
+  get z() {
+    return this._position.z;
+  }
+  /**
+   * @set 设置本地坐标下z的值
+   */
+
+
+  set z(z) {
+    this._position.z = z;
+  }
+  /**
+   * 世界坐标系角度
+   */
+
+
+  /**
+   * @get 获得世界坐标系角度
+   */
+  get worldAngle() {
+    return this._worldAngle;
+  }
+  /**
+   * @set 设置世界坐标系角度
+   */
+
+
+  set worldAngle(angle) {
+    this._worldAngle = angle;
+  }
+  /**
+   * 本地坐标系角度
+   */
+
+
+  /**
+   * @get 获得本地坐标系角度
+   */
+  get angle() {
+    return this._angle;
+  }
+  /**
+   * @set 设置本地坐标系角度
+   */
+
+
+  set angle(angle) {
+    this._angle = angle;
+  }
+  /**
+   * 2d模式锚点
+   */
+
+
+  /**
+   * @get 获得锚点
+   */
+  get anchor() {
+    return this._anchor;
+  }
+  /**
+   * @set 设置锚点
+   */
+
+
+  set anchor(anchor) {
+    this._anchor = anchor;
+  }
+  /**
+   * 宽高对象
+   */
+
+
+  /**
+   * 返回宽高对象
+   */
+  get size() {
+    return this._size;
+  }
+  /**
+   * 设置宽高对象
+   */
+
+
+  set size(size) {
+    this._size = size;
+  }
+  /**
+   * 返回width
+   */
+
+
+  get width() {
+    return this._size.width;
+  }
+  /**
+   * 设置width
+   */
+
+
+  set width(width) {
+    this._size.width = width;
+  }
+  /**
+   * 返回height
+   */
+
+
+  get height() {
+    return this._size.height;
+  }
+  /**
+   * 设置height
+   */
+
+
+  set height(height) {
+    this._size.height = height;
+  }
+  /**
+   * @description transform的右边界框
+   * @readonly
+   */
+
+
+  get right() {
+    return this.position.x + this.width / 2;
+  }
+  /**
+   * @description transform的上边界框
+   */
+
+
+  get top() {
+    return this.position.y + this.height / 2;
+  }
+  /**
+   * @description transform的左边界框
+   */
+
+
+  get left() {
+    return this.position.x - this.width / 2;
+  }
+  /**
+   * @description transform的下边界框
+   */
+
+
+  get down() {
+    return this.position.y - this.height / 2;
+  }
+  /**
+   * @description 本地缩放尺寸
+   */
+
+
+  /**
+   * @description 获得世界缩放尺寸
+   */
+  get scale() {
+    return this._scale;
+  }
+  /**
+   * @description 设置世界缩放尺寸
+   */
+
+
+  set scale(scale) {
+    this._scale = scale;
+  }
+  /**
+   * @description 获得x轴缩放值
+   */
+
+
+  get scaleX() {
+    return this._scale.x;
+  }
+  /**
+   * @description 设置x轴缩放值
+   */
+
+
+  set scaleX(scalex) {
+    this._scale.x = scalex;
+  }
+  /**
+   * @description 获得y轴缩放值
+   */
+
+
+  get scaleY() {
+    return this._scale.y;
+  }
+  /**
+   * @description 获得y轴缩放值
+   */
+
+
+  set scaleY(scaley) {
+    this._scale.y = scaley;
+  }
+  /**
+   * @description 世界缩放尺寸
+   */
+
+
+  /**
+   * @description 获得世界缩放尺寸
+   */
+  get worldScale() {
+    return this._worldScale;
+  }
+  /**
+   * @description 设置世界缩放尺寸
+   */
+
+
+  set worldScale(scale) {
+    this._worldScale = scale;
+  }
+  /**
+   * @description 获得世界x轴缩放值
+   */
+
+
+  get worldScaleX() {
+    return this._worldScale.x;
+  }
+  /**
+   * @description 设置世界x轴缩放值
+   */
+
+
+  set worldScaleX(scalex) {
+    this._worldScale.x = scalex;
+  }
+  /**
+   * @description 获得世界y轴缩放值
+   */
+
+
+  get worldScaleY() {
+    return this._worldScale.y;
+  }
+  /**
+   * @description 设置世界y轴缩放值
+   */
+
+
+  set worldScaleY(scaley) {
+    this._worldScale.y = scaley;
+  }
+  /**
+   * @description 设置世界x轴缩放值
+   */
+
+
+  /**
+   * @description 对transform做tween补间动画
+   * @todo
+   */
+  tween() {}
+
+}, _temp8)) || _class17;
+export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
   /**
    * 实体的相对x坐标
    */
@@ -709,6 +1158,21 @@ export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
   set active(value) {
     this._active = value;
   }
+
+  get isRemoved() {
+    return this._isRemoved;
+  }
+
+  set isRemoved(value) {
+    this._isRemoved = value;
+
+    if (this._isRemoved) {
+      this._isActiveOnRemoved = this.active;
+      this.active = false;
+    } else {
+      this.active = this._isActiveOnRemoved;
+    }
+  }
   /**
    * 实体拥有的所有组件
    */
@@ -742,6 +1206,8 @@ export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
     this.name = void 0;
     this.id = void 0;
     this._active = true;
+    this._isActiveOnRemoved = true;
+    this._isRemoved = false;
     this.components = [];
     this.children = [];
     this._parent = null;
@@ -761,9 +1227,9 @@ export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
 
   mouseDown() {}
 
-  removed() {}
+  onDestroy() {}
 
-  added() {}
+  onAdd() {}
 
   setPosition(value1, value2) {
     if (typeof value1 === "number") {
@@ -896,7 +1362,22 @@ export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
 
   removeChild(child) {
     EngineTools.deleteItemFromList(child, this.children);
-    this.world.remove(child);
+  }
+  /**
+   * 摧毁自己
+   */
+
+
+  destroy() {
+    this.world.destroyEntity(this);
+  }
+  /**
+   * 移除自己
+   */
+
+
+  remove() {
+    this.world.removeEntity(this);
   }
   /**
    * 设置当前实体的父实体
@@ -905,12 +1386,20 @@ export let Entity = rClass(_class17 = (_temp8 = class Entity extends RabObject {
 
 
   setParent(parent) {
-    if (!parent) return console.warn("要添加的父节点不存在");
-    parent.addChild(this);
+    if (!parent) {
+      if (this.parent) this.parent.removeChild(this);
+      this._parent = null;
+    } else {
+      parent.addChild(this);
+    }
   }
 
-}, _temp8)) || _class17;
-export let Sfx = rClass(_class19 = (_temp9 = class Sfx extends RabObject {
+  getBoundingBox() {
+    return this.rect.getBoundingBox();
+  }
+
+}, _temp9)) || _class19;
+export let Sfx = rClass(_class21 = (_temp10 = class Sfx extends RabObject {
   constructor(soundurl) {
     super();
     this.soundUrl = void 0;
@@ -923,7 +1412,7 @@ export let Sfx = rClass(_class19 = (_temp9 = class Sfx extends RabObject {
     this.audio.play();
   }
 
-}, _temp9)) || _class19;
+}, _temp10)) || _class21;
 /**
  * 音频系统类
  * @description 可调用静态方法直接播放音乐
@@ -932,19 +1421,19 @@ export let Sfx = rClass(_class19 = (_temp9 = class Sfx extends RabObject {
  * @todo 停止功能
  */
 
-export let AudioSystem = rClass(_class21 = class AudioSystem extends RabObject {
+export let AudioSystem = rClass(_class23 = class AudioSystem extends RabObject {
   static play(soundurl) {
     const audio = Rabbit.loadAudio(soundurl);
     audio.play();
   }
 
-}) || _class21;
+}) || _class23;
 /**
  * 游戏场景类
  * @todo 加载完成依赖的本地资源后再启动
  */
 
-export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
+export let World = rClass(_class24 = (_temp11 = class World extends RabObject {
   /**
    * 游戏场景的名称，具有唯一性
    */
@@ -955,6 +1444,10 @@ export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
 
   /**
    * 游戏中所有要移除的实体集合，在update事件时移除
+   */
+
+  /**
+   * 移除贮存的实体集合
    */
 
   /**
@@ -977,7 +1470,8 @@ export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
     super();
     this.name = void 0;
     this.entities = [];
-    this.removed = [];
+    this.preDestroys = [];
+    this.removes = [];
     this.maxId = 0;
     this.entitySystem = Rabbit.Instance.entitySystem;
     this.eventSystem = Rabbit.Instance.eventSystem;
@@ -997,13 +1491,22 @@ export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
     this.entitySystem.add(e);
   }
   /**
-   * 在世界中移除实体
-   * @param e 要移除的实体
+   * 在世界中删除实体
+   * @param e 要删除的实体
    */
 
 
-  remove(e) {
-    this.entitySystem.remove(e);
+  destroyEntity(e) {
+    this.entitySystem.destroyEntity(e);
+  }
+  /**
+   * 在世界中移除实体，移除实体并不会清理实体，而是被贮存等待恢复
+   * @param e 要删除的实体
+   */
+
+
+  removeEntity(e) {
+    this.entitySystem.removeEntity(e);
   }
   /**
    * 排序并派发世界中所有有渲染组件的实体执行渲染任务
@@ -1090,7 +1593,7 @@ export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
 
   stop() {
     this.entities = [];
-    this.removed = [];
+    this.preDestroys = [];
     this.maxId = 0;
   }
   /**
@@ -1111,14 +1614,14 @@ export let World = rClass(_class22 = (_temp10 = class World extends RabObject {
     return collisions;
   }
 
-}, _temp10)) || _class22;
+}, _temp11)) || _class24;
 /**
  * 碰撞类
  * @todo 这个类需编写测试用例来完成
  * @todo 继承Component
  */
 
-export let Collision = rClass(_class24 = (_temp11 = class Collision {
+export let Collision = rClass(_class26 = (_temp12 = class Collision {
   constructor(other, rect) {
     this.other = void 0;
     this.rect = void 0;
@@ -1126,13 +1629,13 @@ export let Collision = rClass(_class24 = (_temp11 = class Collision {
     this.rect = rect;
   }
 
-}, _temp11)) || _class24;
+}, _temp12)) || _class26;
 /**
  * 图形组件
  * @description 所有渲染组件都需继承该组件
  */
 
-export let GraphicComponent = rClass(_class26 = (_temp12 = class GraphicComponent extends Component {
+export let GraphicComponent = rClass(_class28 = (_temp13 = class GraphicComponent extends Component {
   constructor(...args) {
     super(...args);
     this.x = 0;
@@ -1145,7 +1648,7 @@ export let GraphicComponent = rClass(_class26 = (_temp12 = class GraphicComponen
 
   draw() {}
 
-}, _temp12)) || _class26;
+}, _temp13)) || _class28;
 /**
  * 文字锚点位置枚举
  * @enum 
@@ -1161,7 +1664,7 @@ export let TextAlignType;
   TextAlignType["end"] = "end";
 })(TextAlignType || (TextAlignType = {}));
 
-export let Text = rClass(_class28 = (_temp13 = _class29 = class Text extends GraphicComponent {
+export let Text = rClass(_class30 = (_temp14 = _class31 = class Text extends GraphicComponent {
   constructor(x, y, text, font, colour, size, align) {
     super();
     this.text = void 0;
@@ -1227,14 +1730,68 @@ export let Text = rClass(_class28 = (_temp13 = _class29 = class Text extends Gra
     this.y = this.entity.absY;
   }
 
-}, _class29.TextAlignType = TextAlignType, _temp13)) || _class28;
-export let Rect = rClass(_class30 = (_temp14 = class Rect extends RabObject {
+}, _class31.TextAlignType = TextAlignType, _temp14)) || _class30;
+export let BoundingBox = rClass(_class32 = (_temp15 = class BoundingBox extends RabObject {
+  constructor(v1, v2, v3, v4) {
+    super();
+    this.left = void 0;
+    this.right = void 0;
+    this.top = void 0;
+    this.down = void 0;
+
+    if (typeof v1 === "object") {
+      this.left = v1.x - v1.w / 2;
+      this.right = v1.x + v1.w / 2;
+      this.top = v1.y + v1.h / 2;
+      this.down = v1.y - v1.h / 2;
+    } else {
+      this.left = v1 - v3 / 2;
+      this.right = v1 + v3 / 2;
+      this.top = v2 + v4 / 2;
+      this.down = v2 - v4 / 2;
+    }
+  }
+
+}, _temp15)) || _class32;
+export let Rect = rClass(_class34 = (_temp16 = class Rect extends RabObject {
+  set w(value) {
+    this._width = value;
+  }
+
+  get w() {
+    return this._width;
+  }
+
+  set width(value) {
+    this._width = value;
+  }
+
+  get width() {
+    return this._width;
+  }
+
+  set h(value) {
+    this._height = value;
+  }
+
+  get h() {
+    return this._height;
+  }
+
+  set height(value) {
+    this._height = value;
+  }
+
+  get height() {
+    return this._height;
+  }
+
   constructor(x, y, w, h) {
     super();
     this.x = void 0;
     this.y = void 0;
-    this.w = void 0;
-    this.h = void 0;
+    this._width = void 0;
+    this._height = void 0;
     this.x = x;
     this.y = y;
     this.w = w;
@@ -1278,8 +1835,12 @@ export let Rect = rClass(_class30 = (_temp14 = class Rect extends RabObject {
     return this.y;
   }
 
-}, _temp14)) || _class30;
-export let Circle = rClass(_class32 = (_temp15 = class Circle extends RabObject {
+  getBoundingBox() {
+    return new BoundingBox(this);
+  }
+
+}, _temp16)) || _class34;
+export let Circle = rClass(_class36 = (_temp17 = class Circle extends RabObject {
   constructor(x, y, radius) {
     super();
     this.x = void 0;
@@ -1309,9 +1870,9 @@ export let Circle = rClass(_class32 = (_temp15 = class Circle extends RabObject 
     this.y = pos[1];
   }
 
-}, _temp15)) || _class32;
+}, _temp17)) || _class36;
 ;
-export let GraphicList = rClass(_class34 = (_temp16 = class GraphicList extends GraphicComponent {
+export let GraphicList = rClass(_class38 = (_temp18 = class GraphicList extends GraphicComponent {
   setGraphics(graphics) {
     this.graphics = graphics;
   }
@@ -1357,7 +1918,7 @@ export let GraphicList = rClass(_class34 = (_temp16 = class GraphicList extends 
     this.move(dx, dy);
   }
 
-  remove(graphic) {
+  destroy(graphic) {
     for (let g = 0; g < this.graphics.length; ++g) {
       if (this.graphics[g] == graphic) this.graphics.slice(g);
     }
@@ -1377,8 +1938,8 @@ export let GraphicList = rClass(_class34 = (_temp16 = class GraphicList extends 
     }
   }
 
-}, _temp16)) || _class34;
-export let RabImage = rClass(_class36 = (_temp17 = class RabImage extends GraphicComponent {
+}, _temp18)) || _class38;
+export let RabImage = rClass(_class40 = (_temp19 = class RabImage extends GraphicComponent {
   get imageUrl() {
     return this._imageUrl;
   }
@@ -1438,8 +1999,48 @@ export let RabImage = rClass(_class36 = (_temp17 = class RabImage extends Graphi
     this.h = this.image.height;
   }
 
-}, _temp17)) || _class36;
-export let Sprite = rClass(_class38 = (_temp18 = class Sprite extends GraphicComponent {
+}, _temp19)) || _class40;
+/**
+ * 直接绑定Canvas对象，每个场景中只能有一个
+ */
+
+export let Canvas = rClass(_class42 = (_temp20 = _class43 = class Canvas extends Component {
+  /**
+   * Canvas唯一实例
+   */
+
+  /**
+   * @description 设计分辨率
+   */
+
+  /**
+   * 适配宽度
+   * @todo 整体适配相关方法
+   */
+
+  /**
+   * 适配高度
+   * @todo 整体适配相关方法
+   */
+
+  /**
+   * @todo 应该对多出来的Canvas做销毁操作
+   */
+  constructor() {
+    super();
+    this.resolution = void 0;
+    this.isFitWidth = false;
+    this.isFitHeight = true;
+    if (Canvas.Instance) return null;
+    Canvas.Instance = this;
+    this.resolution = {
+      width: Rabbit.Instance.htmlCanvas.width,
+      height: Rabbit.Instance.htmlCanvas.height
+    };
+  }
+
+}, _class43.Instance = void 0, _temp20)) || _class42;
+export let Sprite = rClass(_class44 = (_temp21 = class Sprite extends GraphicComponent {
   constructor(x, y, image, frameW, frameH) {
     super();
     this._x = void 0;
@@ -1556,12 +2157,12 @@ export let Sprite = rClass(_class38 = (_temp18 = class Sprite extends GraphicCom
     }
   }
 
-}, _temp18)) || _class38;
+}, _temp21)) || _class44;
 /**
  * 需要重构
  */
 
-export let Tilemap = rClass(_class40 = (_temp19 = class Tilemap extends GraphicComponent {
+export let Tilemap = rClass(_class46 = (_temp22 = class Tilemap extends GraphicComponent {
   constructor(x, y, image, tw, th, gw, gh, tiles) {
     super();
     this.gridW = void 0;
@@ -1589,7 +2190,7 @@ export let Tilemap = rClass(_class40 = (_temp19 = class Tilemap extends GraphicC
   }
 
   build() {
-    this.canvas = new Canvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
+    this.canvas = new SplashCanvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
 
     for (var y = 0; y < this.gridH; ++y) {
       for (var x = 0; x < this.gridW; ++x) {
@@ -1633,12 +2234,13 @@ export let Tilemap = rClass(_class40 = (_temp19 = class Tilemap extends GraphicC
     }
   }
 
-}, _temp19)) || _class40;
+}, _temp22)) || _class46;
 /**
- * @class Canvas类
+ * @class 渲染Canvas类
+ * @deprecated
  */
 
-export let Canvas = rClass(_class42 = (_temp20 = class Canvas extends GraphicComponent {
+export let SplashCanvas = rClass(_class48 = (_temp23 = class SplashCanvas extends GraphicComponent {
   constructor(x, y, w, h) {
     super();
     this.alpha = void 0;
@@ -1668,12 +2270,12 @@ export let Canvas = rClass(_class42 = (_temp20 = class Canvas extends GraphicCom
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
   }
 
-}, _temp20)) || _class42;
+}, _temp23)) || _class48;
 /**
  * @class 引擎工具集合类
  */
 
-export let EngineTools = rClass(_class44 = class EngineTools {
+export let EngineTools = rClass(_class50 = class EngineTools {
   /**
    * 删除对象数组中一个元素
    * @static
@@ -1692,4 +2294,4 @@ export let EngineTools = rClass(_class44 = class EngineTools {
     if (!flag) console.warn("deleteItemFromList方法未找到要删除的元素");
   }
 
-}) || _class44; // export { rabbitClass, Rabbit, Canvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+}) || _class50; // export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

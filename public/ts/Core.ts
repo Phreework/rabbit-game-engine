@@ -733,8 +733,34 @@ export class TestComponent extends Component {
 }
 @rClass
 export class Vec2 {
-    x: number;
-    y: number;
+    _x: number;
+    get x(): number {
+        return this._x;
+    }
+    set x(x: number) {
+        this._x = x;
+    }
+    get width(): number {
+        return this._x;
+    }
+    set width(width: number) {
+        this._x = width;
+    }
+    _y: number;
+    get y(): number {
+        return this._y;
+    }
+    set y(y: number) {
+        this._y = y;
+    }
+    get height(): number {
+        return this._y;
+    }
+    set height(height: number) {
+        this._y = height;
+    }
+    constructor(x: number, y: number);
+    constructor(width: number, height: number);
     constructor(x?: number, y?: number) {
         this.x = x ? x : 0;
         this.y = y ? y : 0;
@@ -764,38 +790,366 @@ export interface IVec2 {
 
 @rClass
 export class Transform extends Component {
-    position: Vec3;
-    localPosition: Vec3;
-    angle: number;
-    localAngle: number;
+
     /**
-     * @description transform的右边界框right
+     * 世界坐标
      */
-    get right() {
+    _worldPosition: Vec3;
 
+    /**
+     *  @get 返回世界坐标
+     */
+    get worldPosition(): Vec3 {
+        return this._worldPosition;
     }
 
-    get top() {
-
+    /**
+     * @set 设置世界坐标
+     */
+    set worldPosition(position: Vec3) {
+        this._worldPosition = position;
     }
-    get left() {
 
+    /**
+     * @get 获得世界坐标下x的值
+     */
+    get worldX(): number {
+        return this._worldPosition.x;
     }
+
+    /**
+     * @set 设置世界坐标下x的值
+     */
+    set worldX(value: number) {
+        this._worldPosition.x = value;
+    }
+
+    /**
+     * @get 获得世界坐标下y的值
+     */
+    get worldY(): number {
+        return this._worldPosition.y;
+    }
+
+    /**
+     * @set 设置世界坐标下y的值
+     */
+    set worldY(value: number) {
+        this._worldPosition.y = value;
+    }
+
+    /**
+     * @get 获得世界坐标下z的值
+     */
+    get worldZ(): number {
+        return this._worldPosition.z;
+    }
+
+    /**
+     * @set 设置世界坐标下z的值
+     */
+    set worldZ(value: number) {
+        this._worldPosition.z = value;
+    }
+
+    /**
+     * 本地坐标
+     */
+    _position: Vec3;
+
+    /**
+     *  @get 返回本地坐标
+     */
+    get position(): Vec3 {
+        return this._position;
+    }
+
+    /**
+     * @set 设置本地坐标
+     */
+    set position(position: Vec3) {
+        this._position = position;
+    }
+
+    /**
+     * @get 获得本地坐标下x的值
+     */
+    get x(): number {
+        return this._position.x;
+    }
+
+    /**
+     * @set 设置本地坐标下x的值
+     */
+    set x(x: number) {
+        this._position.x = x;
+    }
+
+    /**
+     * @get 获得本地坐标下y的值
+     */
+    get y(): number {
+        return this._position.y;
+    }
+
+    /**
+     * @set 设置本地坐标下y的值
+     */
+    set y(y: number) {
+        this._position.y = y;
+    }
+
+    /**
+     * @get 获得本地坐标下z的值
+     */
+    get z(): number {
+        return this._position.z;
+    }
+
+    /**
+     * @set 设置本地坐标下z的值
+     */
+    set z(z: number) {
+        this._position.z = z;
+    }
+
+    /**
+     * 世界坐标系角度
+     */
+    _worldAngle: number;
+
+    /**
+     * @get 获得世界坐标系角度
+     */
+    get worldAngle() {
+        return this._worldAngle;
+    }
+
+    /**
+     * @set 设置世界坐标系角度
+     */
+    set worldAngle(angle: number) {
+        this._worldAngle = angle;
+    }
+
+    /**
+     * 本地坐标系角度
+     */
+    _angle: number;
+
+    /**
+     * @get 获得本地坐标系角度
+     */
+    get angle() {
+        return this._angle;
+    }
+
+    /**
+     * @set 设置本地坐标系角度
+     */
+    set angle(angle: number) {
+        this._angle = angle;
+    }
+
+    /**
+     * 2d模式锚点
+     */
+    _anchor: Vec2;
+
+    /**
+     * @get 获得锚点
+     */
+    get anchor(): Vec2 {
+        return this._anchor;
+    }
+
+    /**
+     * @set 设置锚点
+     */
+    set anchor(anchor: Vec2) {
+        this._anchor = anchor;
+    }
+
+    /**
+     * 宽高对象
+     */
+    _size: Vec2;
+
+    /**
+     * 返回宽高对象
+     */
+    get size(): Vec2 {
+        return this._size;
+    }
+
+    /**
+     * 设置宽高对象
+     */
+    set size(size: Vec2) {
+        this._size = size;
+    }
+
+    /**
+     * 返回width
+     */
+    get width(): number {
+        return this._size.width;
+    }
+
+    /**
+     * 设置width
+     */
+    set width(width: number) {
+        this._size.width = width;
+    }
+
+    /**
+     * 返回height
+     */
+    get height(): number {
+        return this._size.height;
+    }
+
+    /**
+     * 设置height
+     */
+    set height(height: number) {
+        this._size.height = height;
+    }
+
+    /**
+     * @description transform的右边界框
+     * @readonly
+     */
+    get right(): number {
+        return this.position.x + this.width / 2;
+    }
+
+    /**
+     * @description transform的上边界框
+     */
+    get top(): number {
+        return this.position.y + this.height / 2;
+    }
+
+    /**
+     * @description transform的左边界框
+     */
+    get left(): number {
+        return this.position.x - this.width / 2;
+    }
+
+    /**
+     * @description transform的下边界框
+     */
     get down() {
-
+        return this.position.y - this.height / 2;
     }
-    localScale: Vec3;
+
+    /**
+     * @description 本地缩放尺寸
+     */
+    _scale: Vec2;
+
+    /**
+     * @description 获得世界缩放尺寸
+     */
+    get scale(): Vec2 {
+        return this._scale;
+    }
+
+    /**
+     * @description 设置世界缩放尺寸
+     */
+    set scale(scale: Vec2) {
+        this._scale = scale;
+    }
+
+    /**
+     * @description 获得x轴缩放值
+     */
+    get scaleX(): number {
+        return this._scale.x;
+    }
+
+    /**
+     * @description 设置x轴缩放值
+     */
+    set scaleX(scalex: number) {
+        this._scale.x = scalex;
+    }
+
+    /**
+     * @description 获得y轴缩放值
+     */
+    get scaleY(): number {
+        return this._scale.y;
+    }
+
+    /**
+     * @description 获得y轴缩放值
+     */
+    set scaleY(scaley: number) {
+        this._scale.y = scaley;
+    }
+
+    /**
+     * @description 世界缩放尺寸
+     */
+    _worldScale: Vec2;
+
+    /**
+     * @description 获得世界缩放尺寸
+     */
+    get worldScale(): Vec2 {
+        return this._worldScale;
+    }
+
+    /**
+     * @description 设置世界缩放尺寸
+     */
+    set worldScale(scale: Vec2) {
+        this._worldScale = scale;
+    }
+
+    /**
+     * @description 获得世界x轴缩放值
+     */
+    get worldScaleX(): number {
+        return this._worldScale.x;
+    }
+
+    /**
+     * @description 设置世界x轴缩放值
+     */
+    set worldScaleX(scalex: number) {
+        this._worldScale.x = scalex;
+    }
+
+    /**
+     * @description 获得世界y轴缩放值
+     */
+    get worldScaleY(): number {
+        return this._worldScale.y;
+    }
+
+    /**
+     * @description 设置世界y轴缩放值
+     */
+    set worldScaleY(scaley: number) {
+        this._worldScale.y = scaley;
+    }
+
+    /**
+     * @description 设置世界x轴缩放值
+     */
+
     parent: Transform;
 
-    isChildOf(): bool {
-
-    }
-    transformPoint(): Vec3 {
-
-    }
-    inverseTransformPoint(): Vec3 {
-
-    }
+    /**
+     * @description 对transform做tween补间动画
+     * @todo
+     */
     tween() {
 
     }

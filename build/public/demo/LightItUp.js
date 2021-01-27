@@ -1,4 +1,4 @@
-import { Entity, Circle, Canvas, Rabbit, World, Component, AudioSystem } from "../ts/Core.js";
+import { Entity, Circle, SplashCanvas, Rabbit, World, Component, AudioSystem } from "../ts/Core.js";
 
 class Light extends Component {
   constructor(...args) {
@@ -22,12 +22,12 @@ class Light extends Component {
     this.lit = true;
     this.board = board;
     this.circle = new Circle(x + radius, y + radius, radius);
-    this.dark = new Canvas(x, y, radius * 2, radius * 2);
+    this.dark = new SplashCanvas(x, y, radius * 2, radius * 2);
     this.dark.context.beginPath();
     this.dark.context.fillStyle = '#400';
     this.dark.context.arc(radius, radius, this.radius, 0, 360);
     this.dark.context.fill();
-    this.light = new Canvas(x, y, radius * 2, radius * 2);
+    this.light = new SplashCanvas(x, y, radius * 2, radius * 2);
     this.light.context.beginPath();
     this.light.context.fillStyle = '#f00';
     this.light.context.arc(radius, radius, this.radius, 0, 360);
