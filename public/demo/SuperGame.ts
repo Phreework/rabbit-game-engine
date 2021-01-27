@@ -1,4 +1,4 @@
-import { Canvas, Component, Entity, Rabbit, Rect, Text, Vec2, Vec3 } from "../ts/Core";
+import { Canvas, Color, Component, Entity, Rabbit, Rect, Text, Vec2, Vec3 } from "../ts/Core";
 import { NodePool as EntityPool } from "../ts/NodePool";
 
 const playerModel: string =
@@ -106,11 +106,11 @@ export default class SuperGame {
         const gameOverNode = new Entity();
         const lab = gameOverNode.addComponent(Text);
         this.root.addChild(gameOverNode);
-        lab.fontSize = 40;
+        lab.size = 40;
         lab.lineHeight = 40;
-        gameOverNode.color = cc.Color.BLACK;
-        lab.string = '恭喜你！游戏胜利！';
-        gameOverNode.setPosition(0, 0);
+        gameOverNode.transform.color = Color.BLACK;
+        lab.text = '恭喜你！游戏胜利！';
+        gameOverNode.transform.setPosition(0, 0);
         setTimeout(() => {
             this.root.destroy();
         }, 3000);
@@ -118,18 +118,18 @@ export default class SuperGame {
     private initEnemy() {
         const enemy = this.getAscIIModel(enemyModel);
         this.root.addChild(enemy);
-        enemy.setPosition(0, 320);
+        enemy.transform.setPosition(0, 320);
         // console.log("enemy大小",enemy.getContentSize());
 
         let hp = 10;
         const hpNode = new Entity();
         const hpLab = hpNode.addComponent(Text);
         enemy.addChild(hpNode);
-        hpLab.fontSize = 40;
+        hpLab.size = 40;
         hpLab.lineHeight = 40;
-        hpNode.color = cc.Color.BLACK;
-        hpLab.string = 'HP:----------';
-        hpNode.setPosition(0, enemy.height / 2 + 50);
+        hpNode.transform.color = Color.BLACK;
+        hpLab.text = 'HP:----------';
+        hpNode.transform.setPosition(0, enemy.transform.height / 2 + 50);
 
         const collider = enemy.addComponent(SuperBoxCollider);
         collider.group = "enemy";
@@ -137,7 +137,7 @@ export default class SuperGame {
         collider.onColliderEnter = (other) => {
             other.entity.destroy();
             hp -= 1;
-            hpLab.string = hpLab.string.substr(0, hpLab.string.length - 1);
+            hpLab.text = hpLab.text.substr(0, hpLab.text.length - 1);
             if (hp <= 0) {
                 enemy.destroy();
                 this.gameOver();
@@ -148,16 +148,16 @@ export default class SuperGame {
 
     private initPlayer() {
         const player = this.getAscIIModel(playerModel);
-        player.scaleY = -1;
+        player.transform.scaleY = -1;
         this.root.addChild(player);
-        player.setPosition(0, -350);
+        player.transform.setPosition(0, -350);
         const playerTouchCtl = new TouchController(player);
         playerTouchCtl.startEvent = () => {
-            (player as any).startPoint = player.position;
+            (player as any).startPoint = player.transform.position;
         };
         playerTouchCtl.moveEvent = (vecadd) => {
             const startPoint = (player as any).startPoint;
-            player.setPosition(startPoint.x + vecadd.x, startPoint.y + vecadd.y);
+            player.transform.setPosition(startPoint.x + vecadd.x, startPoint.y + vecadd.y);
         };
         const collider = player.addComponent(SuperBoxCollider);
         collider.group = "player";
@@ -168,13 +168,13 @@ export default class SuperGame {
     private shootOneBullet() {
         const bullet = this.getBullet();
         this.root.addChild(bullet);
-        const bulletStartPos: Vec3 = new Vec3(this.player.x, this.player.getBoundingBox().yMax);
-        bullet.setPosition(bulletStartPos);
+        const bulletStartPos: Vec3 = new Vec3(this.player.transform.x, this.player.transform.top);
+        bullet.transform.setPosition(bulletStartPos);
         const bulletFlyTween = new Tween();
         bulletFlyTween.target(bullet)
             .by(1, { y: 300 })
             .call(() => {
-                if (bullet.y >= this.BOUND_UP + bullet.height * 2) {
+                if (bullet.transform.y >= this.BOUND_UP + bullet.transform.height * 2) {
                     bullet.destroy();
                     console.log("bullet销毁");
                     return;
@@ -200,15 +200,15 @@ export default class SuperGame {
     private setRoot() {
         this.root = new Entity();
         this.canvas.entity.addChild(this.root);
-        this.root.setPosition(new Vec2(0, 0));
-        this.root.width = this.canvas.resolution.width;
-        this.root.height = this.canvas.resolution.height;
-        this.BOUND_WIDTH = this.root.width;
-        this.BOUND_HEIGHT = this.root.height;
-        this.BOUND_LEFT = this.root.getBoundingBox().left;
-        this.BOUND_RIGHT = this.root.getBoundingBox().right;
-        this.BOUND_DOWN = this.root.getBoundingBox().down;
-        this.BOUND_UP = this.root.getBoundingBox().top;
+        this.root.transform.setPosition(new Vec2(0, 0));
+        this.root.transform.width = this.canvas.resolution.width;
+        this.root.transform.height = this.canvas.resolution.height;
+        this.BOUND_WIDTH = this.root.transform.width;
+        this.BOUND_HEIGHT = this.root.transform.height;
+        this.BOUND_LEFT = this.root.transform.left;
+        this.BOUND_RIGHT = this.root.transform.right;
+        this.BOUND_DOWN = this.root.transform.down;
+        this.BOUND_UP = this.root.transform.top;
         console.log("----------------------------------")
         console.log("游戏画布宽度：", this.BOUND_WIDTH);
         console.log("游戏画布高度：", this.BOUND_HEIGHT);
@@ -222,14 +222,14 @@ export default class SuperGame {
     private getAscIIModel(str: string): Entity {
         const flyNode = new Entity();
         const label = flyNode.addComponent(Text);
-        label.string = str;
-        label.fontSize = 10;
+        label.text = str;
+        label.size = 10;
         label.lineHeight = 10;
-        label.horizontalAlign = Text.HorizontalAlign.CENTER;
-        flyNode.color = cc.Color.BLACK;
-        const labelOutline = flyNode.addComponent(cc.LabelOutline);
-        labelOutline.color = cc.Color.BLACK;
-        labelOutline.width = 2;
+        label.align = Text.TextAlignType.center;
+        flyNode.transform.color = Color.BLACK;
+        // const labelOutline = flyNode.addComponent(cc.LabelOutline);
+        // labelOutline.color = cc.Color.BLACK;
+        // labelOutline.width = 2;
         // console.log(label.string);
         return flyNode;
     }
@@ -346,7 +346,7 @@ export class SuperBoxCollider extends Component {
     }
 
     updateBox() {
-        this.box = new Rect(this.entity.x - this.entity.width / 2, this.entity.y - this.entity.height / 2, this.entity.width, this.entity.height);
+        this.box = this.entity.transform.getRect();
         // console.log("box", this.box);
     }
 
@@ -376,7 +376,7 @@ export class SuperBoxCollider extends Component {
     onLoad() {
         SuperBoxCollider.addComInst(this);
         this.entity.on(Entity.EventType.POSITION_CHANGED, this.updateBox, this);
-        this.box = new cc.Rect(this.entity.x - this.entity.width / 2, this.entity.y - this.entity.height / 2, this.entity.width, this.entity.height);
+        this.box = this.entity.transform.getRect();
     }
 
     onDestroy() {

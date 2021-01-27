@@ -1175,6 +1175,16 @@ export class Transform extends Component {
     parent: Transform;
 
     /**
+     * 颜色
+     */
+    _color: Color = Color.BLACK;
+    get color() {
+        return this._color;
+    }
+    set color(color: Color) {
+        this._color = color;
+    }
+    /**
      * @description 对transform做tween补间动画
      * @todo
      */
@@ -1697,7 +1707,107 @@ export enum TextAlignType {
     start = "start",
     end = "end",
 }
+/**
+ * @rClass 颜色类
+ */
+@rClass
+export class Color {
 
+    static isNumberAndAToZ(str): boolean {
+        return /^[\da-z]+$/i.test(str);
+    }
+    static isHex(hexlike: string): boolean {
+        if ((hexlike.length != 7) || (hexlike[0] != "#") || !this.isNumberAndAToZ(hexlike.substring(1, hexlike.length))) return false;
+        return true;
+    }
+    static hexToRgb(hex: string) {
+        return { r: parseInt("0x" + hex.slice(1, 3)), g: parseInt("0x" + hex.slice(3, 5)), b: parseInt("0x" + hex.slice(5, 7)) };
+    }
+    static rgbToHex(r: number, g: number, b: number) {
+        return ((r << 16) | (g << 8) | b).toString(16);
+    }
+    _r: number;
+    get r(): number {
+        return this._r;
+    }
+    set r(r: number) {
+        this.r = r;
+    }
+    _g: number;
+    get g(): number {
+        return this._g;
+    }
+    set g(g: number) {
+        this._g = g;
+    }
+    _b: number;
+    get b(): number {
+        return this._b;
+    }
+    set b(b: number) {
+        this._b = b;
+    }
+    _alpha: number = 1;
+    get alpha() {
+        return this._alpha;
+    }
+    set alpha(alpha: number) {
+        this._alpha = alpha;
+    }
+
+    constructor(hex: string);
+    constructor(r: number, g: number, b: number);
+    constructor(r: number, g: number, b: number, a: number);
+    constructor(rorhex: number | string, g?: number, b?: number, a?: number) {
+        if (typeof rorhex === "string") {
+            if (Color.isHex(rorhex)) {
+                const rgbData = Color.hexToRgb(rorhex);
+                this.r = rgbData.r;
+                this.g = rgbData.g;
+                this.b = rgbData.b;
+            } else {
+                console.warn("通过hex码初始化颜色错误");
+                this.r = 0;
+                this.g = 0;
+                this.b = 0;
+                this.alpha = a ? a : 1;
+            }
+        } else {
+            this.r = rorhex;
+            this.g = g;
+            this.b = b;
+        }
+    }
+
+    static get BLACK() {
+        return new Color("#000000");
+    }
+    static get WHITE() {
+
+        return new Color("#FFFFFF");
+    }
+    static get RED() {
+        return new Color("#FF0000");
+    }
+    static get YELLOW() {
+        return new Color("FFFF00");
+    }
+    static get BLUE() {
+        return new Color("#0000FF");
+    }
+    static get GREEN() {
+        return new Color("#008000");
+    }
+    static get ORANGE() {
+        return new Color("#FFA500");
+    }
+    static get PINK() {
+        return new Color("#FFC0CB");
+    }
+}
+/**
+ * @rClass 文本组件
+ */
 @rClass
 export class Text extends GraphicComponent {
     static TextAlignType: typeof TextAlignType = TextAlignType;
@@ -1706,6 +1816,12 @@ export class Text extends GraphicComponent {
     colour: string;
     size: number;
     align: TextAlignType;
+
+    /**
+     * @todo
+     */
+    lineHeight: number;
+
     constructor(x?, y?, text?, font?, colour?, size?, align?) {
         super();
         this.x = x || 0;
