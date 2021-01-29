@@ -51,12 +51,13 @@ export class TestDemo {
             text.text = "Hello, world!";
             entity.mouseDown = () => {
                 console.log("mousedown事件执行");
+                entity.transform.x +=100;
             };
             world.add(entity);
             const child1 = new Entity('child1');
             const text1 = child1.addComponent(Text);
             text1.setAlign(Text.TextAlignType.center);
-            child1.transform.setPosition(50, 0);
+            child1.transform.setPosition(150, 0);
             text1.text = "children text";
             entity.addChild(child1);
             const child2 = new Entity('child2');

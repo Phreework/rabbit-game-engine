@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _temp10, _class23, _class24, _temp11, _class26, _temp12, _class28, _temp13, _class30, _class31, _temp14, _class32, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _class43, _temp20, _class44, _temp21, _class46, _temp22, _class48, _temp23, _class50;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _temp10, _class23, _class24, _temp11, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _class33, _temp15, _class34, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44, _class45, _temp21, _class46, _temp22, _class48, _temp23, _class50, _temp24, _class52;
 
 /** 
  * --------------------------------------------------------
@@ -15,6 +15,7 @@ var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, 
  * --------------------------------------------------------
 */
 import { rClass } from "../ts/Decorator.js";
+import { Debug } from "./Debug.js";
 /**
  * 记录了所有Engine Class的map
  */
@@ -158,7 +159,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.htmlCanvas.width = this.htmlCanvas.clientWidth;
     this.htmlCanvas.height = this.htmlCanvas.clientHeight;
     this.resetCamera();
-    console.log("rabbit 初始化完成");
+    Debug.log("rabbit 初始化完成");
   }
   /**
    * 重设摄像机
@@ -292,7 +293,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
 
   keyDown(event) {
-    // console.log("event", event);
+    // Debug.log("event", event);
     if (this.keysPressed[event.keyCode]) return;
     this.keysPressed[event.keyCode] = true;
     this.world.keyDown(event.keyCode);
@@ -406,8 +407,8 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
       this.run();
       this.isRabbitRun = true;
     } else {
-      console.error("runWorld world不存在");
-    } // console.log("this.world", this.world)
+      Debug.error("runWorld world不存在");
+    } // Debug.log("this.world", this.world)
 
   }
   /**
@@ -736,7 +737,7 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
     this._size = new Vec2(0, 0);
     this._scale = new Vec2(1, 1);
     this._worldScale = new Vec2(1, 1);
-    this.parent = void 0;
+    this._color = Color.BLACK;
     this.x = x ? x : this.x;
     this.y = y ? y : this.y;
     this.width = width ? width : this.width;
@@ -1138,15 +1139,36 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
   set worldScaleY(scaley) {
     this._worldScale.y = scaley;
   }
+
+  get parent() {
+    if (!this.entity) return null;
+    return !this.entity.parent ? null : this.entity.parent.transform;
+  }
+
+  get children() {
+    if (!this.entity) return [];
+    return this.entity.children.map(child => {
+      return child.transform;
+    });
+  }
   /**
-   * @description 设置世界x轴缩放值
+   * 颜色
    */
 
 
+  get color() {
+    return this._color;
+  }
+
+  set color(color) {
+    this._color = color;
+  }
   /**
    * @description 对transform做tween补间动画
    * @todo
    */
+
+
   tween() {}
 
   setPosition(value1, value2) {
@@ -1169,16 +1191,34 @@ export let Transform = rClass(_class17 = (_temp8 = class Transform extends Compo
     this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
     this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
     this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+    this.updateChildren();
   }
 
   updateLocalPosition() {
     this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
     this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldZ;
     this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+    this.updateChildren();
   }
 
   getRect() {
     return new Rect(this.x, this.y, this.width, this.height);
+  }
+
+  updateForParent() {
+    const parent = this.parent;
+    if (!parent) return;
+    this.updateWorldPosition();
+  }
+
+  updateChildren() {
+    const children = this.children;
+    if (!children || children.length == 0) return;
+
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      child.updateForParent();
+    }
   }
 
 }, _temp8)) || _class17;
@@ -1288,14 +1328,14 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
   }
 
   draw() {
-    // console.log("进来了draw")
+    // Debug.log("进来了draw")
     if (this.active && this.graphic && this.graphic.visible) {
       this.graphic.draw();
     }
   }
 
   start() {
-    console.log(this.name + " start执行");
+    Debug.log(this.name + " start执行");
     const len = this.components.length;
     if (len == 0) return;
 
@@ -1321,16 +1361,16 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
         if (rabbitClass[com]) {
           newCom = new rabbitClass[com].prototype.constructor();
         } else {
-          console.log("不存在此component", com);
+          Debug.log("不存在此component", com);
         }
       } catch (e) {
-        console.error("通过string字符串addComponent出错", e);
+        Debug.error("通过string字符串addComponent出错", e);
       }
     } else {
       try {
         newCom = new com();
       } catch (e) {
-        console.error("通过传入类addComponent错误，可能原因为类实现有误");
+        Debug.error("通过传入类addComponent错误，可能原因为类实现有误");
       }
     }
 
@@ -1351,8 +1391,8 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
   }
 
   getComponent(type) {
-    // console.log("test",new TestPro().__proto__.constructor.name);
-    // console.log("test",TestPro.prototype.constructor.name);
+    // Debug.log("test",new TestPro().__proto__.constructor.name);
+    // Debug.log("test",TestPro.prototype.constructor.name);
     if (typeof type == "string") {
       for (let i = 0; i < this.components.length; i++) {
         const com = this.components[i];
@@ -1380,10 +1420,10 @@ export let Entity = rClass(_class19 = (_temp9 = class Entity extends RabObject {
 
 
   addChild(child) {
-    if (!child) return console.warn("要添加的子节点不存在");
+    if (!child) return Debug.warn("要添加的子节点不存在");
     if (child.parent) child.parent.removeChild(this);
-    child._parent = this;
-    child.transform.parent = this.transform;
+    child._parent = this; // child.transform.parent = this.transform;
+
     this.children.push(child);
     this.world.add(child);
     child.transform.updateWorldPosition();
@@ -1613,7 +1653,7 @@ export let World = rClass(_class24 = (_temp11 = class World extends RabObject {
 
 
   start() {
-    console.log("start事件总线执行");
+    Debug.log("start事件总线执行");
     this.eventSystem.start();
   }
   /**
@@ -1685,6 +1725,9 @@ export let GraphicComponent = rClass(_class28 = (_temp13 = class GraphicComponen
  */
 
 export let TextAlignType;
+/**
+ * @rClass 颜色类
+ */
 
 (function (TextAlignType) {
   TextAlignType["left"] = "left";
@@ -1694,7 +1737,127 @@ export let TextAlignType;
   TextAlignType["end"] = "end";
 })(TextAlignType || (TextAlignType = {}));
 
-export let Text = rClass(_class30 = (_temp14 = _class31 = class Text extends GraphicComponent {
+export let Color = rClass(_class30 = (_temp14 = class Color {
+  static isNumberAndAToZ(str) {
+    return /^[\da-z]+$/i.test(str);
+  }
+
+  static isHex(hexlike) {
+    if (hexlike.length != 7 || hexlike[0] != "#" || !this.isNumberAndAToZ(hexlike.substring(1, hexlike.length))) return false;
+    return true;
+  }
+
+  static hexToRgb(hex) {
+    return {
+      r: parseInt("0x" + hex.slice(1, 3)),
+      g: parseInt("0x" + hex.slice(3, 5)),
+      b: parseInt("0x" + hex.slice(5, 7))
+    };
+  }
+
+  static rgbToHex(r, g, b) {
+    return (r << 16 | g << 8 | b).toString(16);
+  }
+
+  get r() {
+    return this._r;
+  }
+
+  set r(r) {
+    this._r = r;
+  }
+
+  get g() {
+    return this._g;
+  }
+
+  set g(g) {
+    this._g = g;
+  }
+
+  get b() {
+    return this._b;
+  }
+
+  set b(b) {
+    this._b = b;
+  }
+
+  get alpha() {
+    return this._alpha;
+  }
+
+  set alpha(alpha) {
+    this._alpha = alpha;
+  }
+
+  constructor(rorhex, g, b, a) {
+    this._r = void 0;
+    this._g = void 0;
+    this._b = void 0;
+    this._alpha = 1;
+
+    if (typeof rorhex === "string") {
+      if (Color.isHex(rorhex)) {
+        const rgbData = Color.hexToRgb(rorhex);
+        this.r = rgbData.r;
+        this.g = rgbData.g;
+        this.b = rgbData.b;
+      } else {
+        Debug.warn("通过hex码初始化颜色错误");
+        this.r = 0;
+        this.g = 0;
+        this.b = 0;
+        this.alpha = a ? a : 1;
+      }
+    } else {
+      this.r = rorhex;
+      this.g = g;
+      this.b = b;
+    }
+  }
+
+  static get BLACK() {
+    return new Color("#000000");
+  }
+
+  static get WHITE() {
+    return new Color("#FFFFFF");
+  }
+
+  static get RED() {
+    return new Color("#FF0000");
+  }
+
+  static get YELLOW() {
+    return new Color("FFFF00");
+  }
+
+  static get BLUE() {
+    return new Color("#0000FF");
+  }
+
+  static get GREEN() {
+    return new Color("#008000");
+  }
+
+  static get ORANGE() {
+    return new Color("#FFA500");
+  }
+
+  static get PINK() {
+    return new Color("#FFC0CB");
+  }
+
+}, _temp14)) || _class30;
+/**
+ * @rClass 文本组件
+ */
+
+export let Text = rClass(_class32 = (_temp15 = _class33 = class Text extends GraphicComponent {
+  /**
+   * @todo
+   */
   constructor(x, y, text, font, colour, size, align) {
     super();
     this.text = void 0;
@@ -1702,6 +1865,7 @@ export let Text = rClass(_class30 = (_temp14 = _class31 = class Text extends Gra
     this.colour = void 0;
     this.size = void 0;
     this.align = void 0;
+    this.lineHeight = void 0;
     this.x = x || 0;
     this.y = y || 0;
     this.text = text || "";
@@ -1714,18 +1878,18 @@ export let Text = rClass(_class30 = (_temp14 = _class31 = class Text extends Gra
     Rabbit.Instance.context.font = this.size + "px " + this.font;
     Rabbit.Instance.context.fillStyle = this.colour;
     this.w = Rabbit.Instance.context.measureText(text).width;
-    this.h = this.size; // console.log("x", this.x);
-    // console.log("y", this.y);
-    // console.log("width", this.w);
-    // console.log("height", this.h);
-    // console.log("text", this.text);
-    // console.log("font", this.font);
-    // console.log("colour", this.colour);
-    // console.log("size", this.size);
-    // console.log("textBaseline", Rabbit.Instance.context.textBaseline);
-    // console.log("font", Rabbit.Instance.context.font);
-    // console.log("fillStyle", Rabbit.Instance.context.fillStyle);
-    // console.log("context", Rabbit.Instance.context);
+    this.h = this.size; // Debug.log("x", this.x);
+    // Debug.log("y", this.y);
+    // Debug.log("width", this.w);
+    // Debug.log("height", this.h);
+    // Debug.log("text", this.text);
+    // Debug.log("font", this.font);
+    // Debug.log("colour", this.colour);
+    // Debug.log("size", this.size);
+    // Debug.log("textBaseline", Rabbit.Instance.context.textBaseline);
+    // Debug.log("font", Rabbit.Instance.context.font);
+    // Debug.log("fillStyle", Rabbit.Instance.context.fillStyle);
+    // Debug.log("context", Rabbit.Instance.context);
   }
 
   setAlign(align) {
@@ -1754,18 +1918,18 @@ export let Text = rClass(_class30 = (_temp14 = _class31 = class Text extends Gra
   }
 
   update(time) {
-    // console.log("RabText update 调用")
+    // Debug.log("RabText update 调用")
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     this.x = this.entity.transform.worldX;
     this.y = this.entity.transform.worldY;
   }
 
-}, _class31.TextAlignType = TextAlignType, _temp14)) || _class30;
+}, _class33.TextAlignType = TextAlignType, _temp15)) || _class32;
 /**
  * @deprecated 已弃用
  */
 
-export let BoundingBox = rClass(_class32 = (_temp15 = class BoundingBox extends RabObject {
+export let BoundingBox = rClass(_class34 = (_temp16 = class BoundingBox extends RabObject {
   constructor(v1, v2, v3, v4) {
     super();
     this.left = void 0;
@@ -1786,8 +1950,8 @@ export let BoundingBox = rClass(_class32 = (_temp15 = class BoundingBox extends 
     }
   }
 
-}, _temp15)) || _class32;
-export let Rect = rClass(_class34 = (_temp16 = class Rect extends RabObject {
+}, _temp16)) || _class34;
+export let Rect = rClass(_class36 = (_temp17 = class Rect extends RabObject {
   set w(value) {
     this._width = value;
   }
@@ -1869,8 +2033,8 @@ export let Rect = rClass(_class34 = (_temp16 = class Rect extends RabObject {
     return this.y;
   }
 
-}, _temp16)) || _class34;
-export let Circle = rClass(_class36 = (_temp17 = class Circle extends RabObject {
+}, _temp17)) || _class36;
+export let Circle = rClass(_class38 = (_temp18 = class Circle extends RabObject {
   constructor(x, y, radius) {
     super();
     this.x = void 0;
@@ -1900,9 +2064,9 @@ export let Circle = rClass(_class36 = (_temp17 = class Circle extends RabObject 
     this.y = pos[1];
   }
 
-}, _temp17)) || _class36;
+}, _temp18)) || _class38;
 ;
-export let GraphicList = rClass(_class38 = (_temp18 = class GraphicList extends GraphicComponent {
+export let GraphicList = rClass(_class40 = (_temp19 = class GraphicList extends GraphicComponent {
   setGraphics(graphics) {
     this.graphics = graphics;
   }
@@ -1968,8 +2132,8 @@ export let GraphicList = rClass(_class38 = (_temp18 = class GraphicList extends 
     }
   }
 
-}, _temp18)) || _class38;
-export let RabImage = rClass(_class40 = (_temp19 = class RabImage extends GraphicComponent {
+}, _temp19)) || _class40;
+export let RabImage = rClass(_class42 = (_temp20 = class RabImage extends GraphicComponent {
   get imageUrl() {
     return this._imageUrl;
   }
@@ -2008,7 +2172,7 @@ export let RabImage = rClass(_class40 = (_temp19 = class RabImage extends Graphi
     if (!this.image || !this.image.valid) return;
     Rabbit.Instance.context.save();
     Rabbit.Instance.context.globalAlpha = this.alpha;
-    if (this.ignoreCamera) Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));else Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y)); // console.log("camera",Rabbit.Instance.camera);
+    if (this.ignoreCamera) Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));else Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y)); // Debug.log("camera",Rabbit.Instance.camera);
 
     Rabbit.Instance.context.drawImage(this.image, 0, 0);
     Rabbit.Instance.context.globalAlpha = 1;
@@ -2029,12 +2193,12 @@ export let RabImage = rClass(_class40 = (_temp19 = class RabImage extends Graphi
     this.h = this.image.height;
   }
 
-}, _temp19)) || _class40;
+}, _temp20)) || _class42;
 /**
  * 直接绑定Canvas对象，每个场景中只能有一个
  */
 
-export let Canvas = rClass(_class42 = (_temp20 = _class43 = class Canvas extends Component {
+export let Canvas = rClass(_class44 = (_temp21 = _class45 = class Canvas extends Component {
   /**
    * Canvas唯一实例
    */
@@ -2069,8 +2233,8 @@ export let Canvas = rClass(_class42 = (_temp20 = _class43 = class Canvas extends
     };
   }
 
-}, _class43.Instance = void 0, _temp20)) || _class42;
-export let Sprite = rClass(_class44 = (_temp21 = class Sprite extends GraphicComponent {
+}, _class45.Instance = void 0, _temp21)) || _class44;
+export let Sprite = rClass(_class46 = (_temp22 = class Sprite extends GraphicComponent {
   constructor(x, y, image, frameW, frameH) {
     super();
     this._x = void 0;
@@ -2187,12 +2351,12 @@ export let Sprite = rClass(_class44 = (_temp21 = class Sprite extends GraphicCom
     }
   }
 
-}, _temp21)) || _class44;
+}, _temp22)) || _class46;
 /**
  * 需要重构
  */
 
-export let Tilemap = rClass(_class46 = (_temp22 = class Tilemap extends GraphicComponent {
+export let Tilemap = rClass(_class48 = (_temp23 = class Tilemap extends GraphicComponent {
   constructor(x, y, image, tw, th, gw, gh, tiles) {
     super();
     this.gridW = void 0;
@@ -2264,13 +2428,13 @@ export let Tilemap = rClass(_class46 = (_temp22 = class Tilemap extends GraphicC
     }
   }
 
-}, _temp22)) || _class46;
+}, _temp23)) || _class48;
 /**
  * @class 渲染Canvas类
  * @deprecated
  */
 
-export let SplashCanvas = rClass(_class48 = (_temp23 = class SplashCanvas extends GraphicComponent {
+export let SplashCanvas = rClass(_class50 = (_temp24 = class SplashCanvas extends GraphicComponent {
   constructor(x, y, w, h) {
     super();
     this.alpha = void 0;
@@ -2300,12 +2464,12 @@ export let SplashCanvas = rClass(_class48 = (_temp23 = class SplashCanvas extend
     Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
   }
 
-}, _temp23)) || _class48;
+}, _temp24)) || _class50;
 /**
  * @class 引擎工具集合类
  */
 
-export let EngineTools = rClass(_class50 = class EngineTools {
+export let EngineTools = rClass(_class52 = class EngineTools {
   /**
    * 删除对象数组中一个元素
    * @static
@@ -2321,7 +2485,7 @@ export let EngineTools = rClass(_class50 = class EngineTools {
       }
     }
 
-    if (!flag) console.warn("deleteItemFromList方法未找到要删除的元素");
+    if (!flag) Debug.warn("deleteItemFromList方法未找到要删除的元素");
   }
 
-}) || _class50; // export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+}) || _class52; // export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };

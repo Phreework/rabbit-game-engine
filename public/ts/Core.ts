@@ -14,6 +14,7 @@
 */
 
 import { rClass } from "../ts/Decorator.js";
+import { Debug } from "./Debug.js";
 
 /**
  * 记录了所有Engine Class的map
@@ -247,7 +248,7 @@ export class Rabbit {
         this.htmlCanvas.height = this.htmlCanvas.clientHeight;
 
         this.resetCamera();
-        console.log("rabbit 初始化完成")
+        Debug.log("rabbit 初始化完成")
     }
 
     /**
@@ -357,7 +358,7 @@ export class Rabbit {
      * @param event 
      */
     keyDown(event: KeyboardEvent): void {
-        // console.log("event", event);
+        // Debug.log("event", event);
         if (this.keysPressed[event.keyCode]) return;
         this.keysPressed[event.keyCode] = true;
         this.world.keyDown(event.keyCode);
@@ -457,9 +458,9 @@ export class Rabbit {
             this.run();
             this.isRabbitRun = true;
         } else {
-            console.error("runWorld world不存在");
+            Debug.error("runWorld world不存在");
         }
-        // console.log("this.world", this.world)
+        // Debug.log("this.world", this.world)
     }
 
     /**
@@ -1167,13 +1168,14 @@ export class Transform extends Component {
     set worldScaleY(scaley: number) {
         this._worldScale.y = scaley;
     }
-
-    /**
-     * @description 设置世界x轴缩放值
-     */
-
-    parent: Transform;
-
+    get parent(): Transform {
+        if (!this.entity) return null;
+        return (!this.entity.parent) ? null : this.entity.parent.transform;
+    }
+    get children(): Transform[] {
+        if (!this.entity) return [];
+        return this.entity.children.map((child) => { return child.transform });
+    }
     /**
      * 颜色
      */
@@ -1212,15 +1214,32 @@ export class Transform extends Component {
         this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
         this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
         this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+        this.updateChildren();
     }
     updateLocalPosition() {
         this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
         this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldZ;
         this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+        this.updateChildren();
     }
 
     getRect(): Rect {
         return new Rect(this.x, this.y, this.width, this.height);
+    }
+
+    updateForParent() {
+        const parent = this.parent;
+        if (!parent) return;
+        this.updateWorldPosition();
+    }
+
+    updateChildren() {
+        const children = this.children;
+        if (!children || children.length == 0) return;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            child.updateForParent();
+        }
     }
 
 }
@@ -1334,14 +1353,14 @@ export class Entity extends RabObject {
     }
 
     draw() {
-        // console.log("进来了draw")
+        // Debug.log("进来了draw")
         if (this.active && this.graphic && this.graphic.visible) {
             this.graphic.draw();
         }
     }
 
     start() {
-        console.log(this.name + " start执行");
+        Debug.log(this.name + " start执行");
         const len: number = this.components.length;
         if (len == 0) return;
         for (let i = 0; i < len; i++) {
@@ -1366,16 +1385,16 @@ export class Entity extends RabObject {
                 if (rabbitClass[com]) {
                     newCom = new rabbitClass[com].prototype.constructor();
                 } else {
-                    console.log("不存在此component", com);
+                    Debug.log("不存在此component", com);
                 }
             } catch (e) {
-                console.error("通过string字符串addComponent出错", e);
+                Debug.error("通过string字符串addComponent出错", e);
             }
         } else {
             try {
                 newCom = new com();
             } catch (e) {
-                console.error("通过传入类addComponent错误，可能原因为类实现有误");
+                Debug.error("通过传入类addComponent错误，可能原因为类实现有误");
             }
         }
         if (newCom) {
@@ -1394,8 +1413,8 @@ export class Entity extends RabObject {
     getComponent(className: string): Component;
     getComponent<T extends Component>(type: { prototype: T }): T;
     getComponent<T extends Component>(type: string | { prototype: T }): any {
-        // console.log("test",new TestPro().__proto__.constructor.name);
-        // console.log("test",TestPro.prototype.constructor.name);
+        // Debug.log("test",new TestPro().__proto__.constructor.name);
+        // Debug.log("test",TestPro.prototype.constructor.name);
         if (typeof type == "string") {
             for (let i = 0; i < this.components.length; i++) {
                 const com = this.components[i];
@@ -1419,10 +1438,10 @@ export class Entity extends RabObject {
      * @param child 
      */
     addChild(child: Entity) {
-        if (!child) return console.warn("要添加的子节点不存在");
+        if (!child) return Debug.warn("要添加的子节点不存在");
         if (child.parent) child.parent.removeChild(this);
         child._parent = this;
-        child.transform.parent = this.transform;
+        // child.transform.parent = this.transform;
         this.children.push(child);
         this.world.add(child);
         child.transform.updateWorldPosition();
@@ -1636,7 +1655,7 @@ export class World extends RabObject {
      * start事件，无需手动调用
      */
     start() {
-        console.log("start事件总线执行")
+        Debug.log("start事件总线执行")
         this.eventSystem.start();
     }
 
@@ -1731,7 +1750,7 @@ export class Color {
         return this._r;
     }
     set r(r: number) {
-        this.r = r;
+        this._r = r;
     }
     _g: number;
     get g(): number {
@@ -1766,7 +1785,7 @@ export class Color {
                 this.g = rgbData.g;
                 this.b = rgbData.b;
             } else {
-                console.warn("通过hex码初始化颜色错误");
+                Debug.warn("通过hex码初始化颜色错误");
                 this.r = 0;
                 this.g = 0;
                 this.b = 0;
@@ -1838,19 +1857,19 @@ export class Text extends GraphicComponent {
         this.w = Rabbit.Instance.context.measureText(text).width;
         this.h = this.size;
 
-        // console.log("x", this.x);
-        // console.log("y", this.y);
-        // console.log("width", this.w);
-        // console.log("height", this.h);
-        // console.log("text", this.text);
-        // console.log("font", this.font);
-        // console.log("colour", this.colour);
-        // console.log("size", this.size);
+        // Debug.log("x", this.x);
+        // Debug.log("y", this.y);
+        // Debug.log("width", this.w);
+        // Debug.log("height", this.h);
+        // Debug.log("text", this.text);
+        // Debug.log("font", this.font);
+        // Debug.log("colour", this.colour);
+        // Debug.log("size", this.size);
 
-        // console.log("textBaseline", Rabbit.Instance.context.textBaseline);
-        // console.log("font", Rabbit.Instance.context.font);
-        // console.log("fillStyle", Rabbit.Instance.context.fillStyle);
-        // console.log("context", Rabbit.Instance.context);
+        // Debug.log("textBaseline", Rabbit.Instance.context.textBaseline);
+        // Debug.log("font", Rabbit.Instance.context.font);
+        // Debug.log("fillStyle", Rabbit.Instance.context.fillStyle);
+        // Debug.log("context", Rabbit.Instance.context);
 
     }
 
@@ -1870,7 +1889,6 @@ export class Text extends GraphicComponent {
     }
 
     draw() {
-
         this.w = Rabbit.Instance.context.measureText(this.text).width;
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.textAlign = this.align;
@@ -1880,7 +1898,7 @@ export class Text extends GraphicComponent {
     }
 
     update(time) {
-        // console.log("RabText update 调用")
+        // Debug.log("RabText update 调用")
         Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
         this.x = this.entity.transform.worldX;
         this.y = this.entity.transform.worldY;
@@ -2141,7 +2159,7 @@ export class RabImage extends GraphicComponent {
         else
             Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
 
-        // console.log("camera",Rabbit.Instance.camera);
+        // Debug.log("camera",Rabbit.Instance.camera);
         Rabbit.Instance.context.drawImage(this.image, 0, 0);
         Rabbit.Instance.context.globalAlpha = 1;
         Rabbit.Instance.context.restore();
@@ -2474,7 +2492,7 @@ export class EngineTools {
                 break;
             }
         }
-        if (!flag) console.warn("deleteItemFromList方法未找到要删除的元素");
+        if (!flag) Debug.warn("deleteItemFromList方法未找到要删除的元素");
     }
 }
 // export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
