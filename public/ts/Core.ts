@@ -769,9 +769,27 @@ export class Vec2 {
 }
 @rClass
 export class Vec3 {
-    x: number;
-    y: number;
-    z: number;
+    _x: number;
+    _y: number;
+    _z: number;
+    get x(): number {
+        return this._x;
+    }
+    set x(x: number) {
+        this._x = x;
+    }
+    get y(): number {
+        return this._y;
+    }
+    set y(y: number) {
+        this._y = y;
+    }
+    get z(): number {
+        return this._z;
+    }
+    set z(z: number) {
+        this._z = z;
+    }
     constructor(x?: number, y?: number, z?: number) {
         this.x = x ? x : 0;
         this.y = y ? y : 0;
@@ -790,8 +808,50 @@ export interface IVec2 {
 }
 
 @rClass
+export class TransformChangeSign {
+    isAngleChange: boolean = false;
+
+}
+@rClass
 export class Transform extends Component {
 
+    changeSign: TransformChangeSign = new TransformChangeSign();
+    /**
+     * 世界坐标
+     */
+    _worldPosition: Vec3 = new Vec3();
+    /**
+     * 本地坐标
+     */
+    _position: Vec3 = new Vec3();
+    /**
+     * 世界坐标系角度
+     */
+    _worldAngle: number = 0;
+    /**
+     * 本地坐标系角度
+     */
+    _angle: number = 0;
+    /**
+     * 2d模式锚点
+     */
+    _anchor: Vec2 = new Vec2(0.5, 0.5);
+    /**
+     * @description 本地缩放尺寸
+     */
+    _scale: Vec2 = new Vec2(1, 1);
+    /**
+     * @description 世界缩放尺寸
+     */
+    _worldScale: Vec2 = new Vec2(1, 1);
+    /**
+     * 颜色
+     */
+    _color: Color = Color.BLACK;
+    /**
+     * 宽高对象
+     */
+    _size: Vec2 = new Vec2(0, 0);
 
     constructor(x?: number, y?: number, width?: number, height?: number, scalex?: number, scaley?: number) {
         super();
@@ -811,11 +871,6 @@ export class Transform extends Component {
         this.scaleX = scalex ? scalex : this.scaleX;
         this.scaleY = scaley ? scaley : this.scaleY;
     }
-
-    /**
-     * 世界坐标
-     */
-    _worldPosition: Vec3 = new Vec3();
 
     /**
      *  @get 返回世界坐标
@@ -877,10 +932,7 @@ export class Transform extends Component {
         this.updateLocalPosition();
     }
 
-    /**
-     * 本地坐标
-     */
-    _position: Vec3 = new Vec3();;
+
 
     /**
      *  @get 返回本地坐标
@@ -894,7 +946,8 @@ export class Transform extends Component {
      */
     set position(position: Vec3) {
         this._position = position;
-        this.updateWorldPosition();
+        this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
+        this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
     }
 
     /**
@@ -942,29 +995,26 @@ export class Transform extends Component {
         this.updateWorldPosition();
     }
 
-    /**
-     * 世界坐标系角度
-     */
-    _worldAngle: number = 0;
+
 
     /**
      * @get 获得世界坐标系角度
+     * @readonly
      */
     get worldAngle() {
         return this._worldAngle;
     }
 
-    /**
-     * @set 设置世界坐标系角度
-     */
-    set worldAngle(angle: number) {
-        this._worldAngle = angle;
-    }
+    // /**
+    //  * @set 设置世界坐标系角度
+    //  */
+    // set worldAngle(angle: number) {
+    //     this._worldAngle = angle;
+    //     this.updateLocalAngle();
+    // }
 
-    /**
-     * 本地坐标系角度
-     */
-    _angle: number = 0;
+
+
 
     /**
      * @get 获得本地坐标系角度
@@ -978,12 +1028,10 @@ export class Transform extends Component {
      */
     set angle(angle: number) {
         this._angle = angle;
+        this.updateWorldAngle();
     }
 
-    /**
-     * 2d模式锚点
-     */
-    _anchor: Vec2 = new Vec2(0.5, 0.5);
+
 
     /**
      * @get 获得锚点
@@ -997,12 +1045,10 @@ export class Transform extends Component {
      */
     set anchor(anchor: Vec2) {
         this._anchor = anchor;
+        this.updateAnchor();
     }
 
-    /**
-     * 宽高对象
-     */
-    _size: Vec2 = new Vec2(0, 0);
+
 
     /**
      * 返回宽高对象
@@ -1016,6 +1062,7 @@ export class Transform extends Component {
      */
     set size(size: Vec2) {
         this._size = size;
+        this.updateSize();
     }
 
     /**
@@ -1030,6 +1077,7 @@ export class Transform extends Component {
      */
     set width(width: number) {
         this._size.width = width;
+        this.updateSize();
     }
 
     /**
@@ -1044,6 +1092,7 @@ export class Transform extends Component {
      */
     set height(height: number) {
         this._size.height = height;
+        this.updateSize();
     }
 
     /**
@@ -1076,11 +1125,6 @@ export class Transform extends Component {
     }
 
     /**
-     * @description 本地缩放尺寸
-     */
-    _scale: Vec2 = new Vec2(1, 1);
-
-    /**
      * @description 获得世界缩放尺寸
      */
     get scale(): Vec2 {
@@ -1092,6 +1136,7 @@ export class Transform extends Component {
      */
     set scale(scale: Vec2) {
         this._scale = scale;
+        this.updateWorldScale();
     }
 
     /**
@@ -1106,6 +1151,7 @@ export class Transform extends Component {
      */
     set scaleX(scalex: number) {
         this._scale.x = scalex;
+        this.updateWorldScale();
     }
 
     /**
@@ -1120,12 +1166,9 @@ export class Transform extends Component {
      */
     set scaleY(scaley: number) {
         this._scale.y = scaley;
+        this.updateWorldScale();
     }
 
-    /**
-     * @description 世界缩放尺寸
-     */
-    _worldScale: Vec2 = new Vec2(1, 1);
 
     /**
      * @description 获得世界缩放尺寸
@@ -1139,6 +1182,7 @@ export class Transform extends Component {
      */
     set worldScale(scale: Vec2) {
         this._worldScale = scale;
+        this.updateLocalScale();
     }
 
     /**
@@ -1153,6 +1197,7 @@ export class Transform extends Component {
      */
     set worldScaleX(scalex: number) {
         this._worldScale.x = scalex;
+        this.updateLocalScale();
     }
 
     /**
@@ -1167,6 +1212,7 @@ export class Transform extends Component {
      */
     set worldScaleY(scaley: number) {
         this._worldScale.y = scaley;
+        this.updateLocalScale();
     }
     get parent(): Transform {
         if (!this.entity) return null;
@@ -1176,15 +1222,13 @@ export class Transform extends Component {
         if (!this.entity) return [];
         return this.entity.children.map((child) => { return child.transform });
     }
-    /**
-     * 颜色
-     */
-    _color: Color = Color.BLACK;
+
     get color() {
         return this._color;
     }
     set color(color: Color) {
         this._color = color;
+        this.updateRenderColor();
     }
     /**
      * @description 对transform做tween补间动画
@@ -1194,16 +1238,74 @@ export class Transform extends Component {
 
     }
 
+
+
+    getRect(): Rect {
+        return new Rect(this.x, this.y, this.width, this.height);
+    }
+
+    updateForParent() {
+        const parent = this.parent;
+        if (!parent) return;
+        this.updateWorldPosition();
+        this.updateWorldAngle(true);
+        this.updateWorldScale();
+    }
+
+    updateChildren() {
+        const children = this.children;
+        if (!children || children.length == 0) return;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            child.updateForParent();
+        }
+    }
+    /**
+ * @todo 如果绑定的entity上的graphic组件实现transformColor接口，则通过updateRenderColor更新颜色
+ */
+    updateRenderColor() {
+
+    }
+    updateLocalScale() {
+
+    }
+    updateWorldScale() {
+
+    }
+    updateSize() {
+
+    }
+    updateAnchor() {
+
+    }
+    // updateLocalAngle() {
+    //     this._angle = this.parent ? this._worldAngle - this.parent.worldAngle : this._worldAngle;
+    //     this.updateChildren();
+    // }
+    updateWorldAngle(isforparent?: boolean) {
+        const oldAngle: number = this._worldAngle;
+        this._worldAngle = this.parent ? this.parent.worldAngle + this._angle : this._angle;
+        if (isforparent) {
+            const angleFix = this._worldAngle - oldAngle;
+            const fixPoint = Transform.calcNewPoint(this.worldPosition, this.parent.worldPosition, angleFix);
+            this.worldPosition = new Vec3(fixPoint.x, fixPoint.y, 0);
+        }
+        this.updateChildren();
+    }
     setPosition(x: number);
     setPosition(x: number, y: number);
     setPosition(vec2: IVec2);
-    setPosition(value1?: IVec2 | number, value2?: number) {
+    setPosition(vec3: IVec3);
+    setPosition(value1?: IVec3 | IVec2 | number, value2?: number) {
         if (typeof value1 === "number") {
-            this.position.x = value1;
-            this.position.y = (value2 || value2 == 0) ? value2 : this.y;
+            this._position.x = value1;
+            this._position.y = (value2 || value2 == 0) ? value2 : this._position.y;
         } else {
-            this.position.x = value1.x;
-            this.position.y = value1.y;
+            this._position.x = value1.x;
+            this._position.y = value1.y;
+            if (value1["z"]) {
+                this._position.z = (value1 as IVec3).z;
+            }
         }
         this.updateWorldPosition();
     }
@@ -1218,30 +1320,24 @@ export class Transform extends Component {
     }
     updateLocalPosition() {
         this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
-        this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldZ;
+        this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldY;
         this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
         this.updateChildren();
     }
 
-    getRect(): Rect {
-        return new Rect(this.x, this.y, this.width, this.height);
-    }
+    static calcNewPoint(p: IVec2, pCenter: IVec2, angle: number): Vec2 {
+        // calc arc 
+        let l: number = ((angle * Math.PI) / 180);
 
-    updateForParent() {
-        const parent = this.parent;
-        if (!parent) return;
-        this.updateWorldPosition();
-    }
+        //sin/cos value
+        let cosv: number = Math.cos(l);
+        let sinv: number = Math.sin(l);
 
-    updateChildren() {
-        const children = this.children;
-        if (!children || children.length == 0) return;
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            child.updateForParent();
-        }
+        // calc new point
+        const newX: number = ((p.x - pCenter.x) * cosv - (p.y - pCenter.y) * sinv + pCenter.x);
+        const newY: number = ((p.x - pCenter.x) * sinv + (p.y - pCenter.y) * cosv + pCenter.y);
+        return new Vec2(newX, newY);
     }
-
 }
 @rClass
 export class Entity extends RabObject {
@@ -1833,7 +1929,7 @@ export class Text extends GraphicComponent {
     text: string;
     font: string;
     colour: string;
-    size: number;
+    textSize: number;
     align: TextAlignType;
 
     /**
@@ -1843,19 +1939,19 @@ export class Text extends GraphicComponent {
 
     constructor(x?, y?, text?, font?, colour?, size?, align?) {
         super();
-        this.x = x || 0;
-        this.y = y || 0;
+        // this.x = x || 0;
+        // this.y = y || 0;
         this.text = text || "";
         this.font = font || "sans";
         this.colour = colour || "white";
-        this.size = size || 14;
+        this.textSize = size || 14;
         this.align = align || "left";
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.textAlign = this.align;
-        Rabbit.Instance.context.font = this.size + "px " + this.font;
+        Rabbit.Instance.context.font = this.textSize + "px " + this.font;
         Rabbit.Instance.context.fillStyle = this.colour;
         this.w = Rabbit.Instance.context.measureText(text).width;
-        this.h = this.size;
+        this.h = this.textSize;
 
         // Debug.log("x", this.x);
         // Debug.log("y", this.y);
@@ -1877,31 +1973,27 @@ export class Text extends GraphicComponent {
         this.align = align;
     }
 
-    /**
-     * 设置text的坐标（脱离entity）
-     * @deprecated
-     * @param x 
-     * @param y 
-     */
-    private setPosition(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-    }
-
     draw() {
+        Rabbit.Instance.context.save();
+        const transform = this.entity.transform;
+        const value: number = transform.worldAngle * Math.PI / 180;
         this.w = Rabbit.Instance.context.measureText(this.text).width;
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.textAlign = this.align;
-        Rabbit.Instance.context.font = this.size + "px " + this.font;
+        Rabbit.Instance.context.font = this.textSize + "px " + this.font;
         Rabbit.Instance.context.fillStyle = this.colour;
-        Rabbit.Instance.context.fillText(this.text, this.x, this.y);
+
+        Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
+        // console.log("x,y", transform.worldX, transform.worldY)
+        Rabbit.Instance.context.rotate(value);
+
+        Rabbit.Instance.context.fillText(this.text, 0, 0);
+        Rabbit.Instance.context.restore();
     }
 
     update(time) {
         // Debug.log("RabText update 调用")
-        Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
-        this.x = this.entity.transform.worldX;
-        this.y = this.entity.transform.worldY;
+        // Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     }
 }
 

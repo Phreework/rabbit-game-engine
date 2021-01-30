@@ -51,12 +51,6 @@ export class TestDemo {
       text.setAlign(Text.TextAlignType.center);
       entity.transform.setPosition(Rabbit.Instance.winSize.w / 2, Rabbit.Instance.winSize.h / 2);
       text.text = "Hello, world!";
-
-      entity.mouseDown = () => {
-        console.log("mousedown事件执行");
-        entity.transform.x += 100;
-      };
-
       world.add(entity);
       const child1 = new Entity('child1');
       const text1 = child1.addComponent(Text);
@@ -67,6 +61,11 @@ export class TestDemo {
       const child2 = new Entity('child2');
       child2.setParent(entity);
       console.log("entity", entity);
+
+      entity.mouseDown = () => {
+        console.log("mousedown事件执行");
+        entity.transform.angle += 5; // console.log("entity transform", child1.transform);
+      };
     };
 
     return world;

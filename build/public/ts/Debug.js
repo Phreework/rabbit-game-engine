@@ -4,8 +4,8 @@ export class Debug {
    * @param msg 
    * @param args 
    */
-  static log(msg, ...args) {
-    console.log(msg, args);
+  static log(...args) {
+    console.log(args);
   }
   /**
    * 打印错误信息
@@ -14,8 +14,8 @@ export class Debug {
    */
 
 
-  static error(msg, ...args) {
-    console.error(msg, args);
+  static error(...args) {
+    console.error(args);
   }
   /**
    * 打印警告信息
@@ -24,8 +24,8 @@ export class Debug {
    */
 
 
-  static warn(msg, ...args) {
-    console.warn(msg, args);
+  static warn(...args) {
+    console.warn(args);
   }
   /**
    * 使用github查询特定函数报错码

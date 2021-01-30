@@ -4,8 +4,8 @@ export class Debug {
      * @param msg 
      * @param args 
      */
-    static log(msg?: any, ...args: any[]) {
-        console.log(msg, args);
+    static log(...args: any[]) {
+        console.log(args);
     }
 
     /**
@@ -13,8 +13,8 @@ export class Debug {
      * @param msg 
      * @param args 
      */
-    static error(msg?: any, ...args: any[]) {
-        console.error(msg, args);
+    static error( ...args: any[]) {
+        console.error(args);
     }
 
     /**
@@ -22,8 +22,8 @@ export class Debug {
      * @param msg 
      * @param args 
      */
-    static warn(msg?: any, ...args: any[]) {
-        console.warn(msg, args);
+    static warn(...args: any[]) {
+        console.warn(args);
     }
 
     /**

@@ -1,5 +1,6 @@
 import { Canvas, Color, Component, Entity, Rabbit, Rect, Text, Vec2, Vec3 } from "../ts/Core";
 import { NodePool as EntityPool } from "../ts/NodePool";
+import Tween from "../ts/tweens/Tween";
 
 const playerModel: string =
     "                                 __                                 " + "\n" +
@@ -106,7 +107,7 @@ export default class SuperGame {
         const gameOverNode = new Entity();
         const lab = gameOverNode.addComponent(Text);
         this.root.addChild(gameOverNode);
-        lab.size = 40;
+        lab.textSize = 40;
         lab.lineHeight = 40;
         gameOverNode.transform.color = Color.BLACK;
         lab.text = '恭喜你！游戏胜利！';
@@ -125,7 +126,7 @@ export default class SuperGame {
         const hpNode = new Entity();
         const hpLab = hpNode.addComponent(Text);
         enemy.addChild(hpNode);
-        hpLab.size = 40;
+        hpLab.textSize = 40;
         hpLab.lineHeight = 40;
         hpNode.transform.color = Color.BLACK;
         hpLab.text = 'HP:----------';
@@ -223,7 +224,7 @@ export default class SuperGame {
         const flyNode = new Entity();
         const label = flyNode.addComponent(Text);
         label.text = str;
-        label.size = 10;
+        label.textSize = 10;
         label.lineHeight = 10;
         label.align = Text.TextAlignType.center;
         flyNode.transform.color = Color.BLACK;
