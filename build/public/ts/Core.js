@@ -788,6 +788,10 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   /**
    * 颜色
    */
+
+  /**
+   * 宽高对象
+   */
   constructor(x, y, width, height, scalex, scaley) {
     super();
     this.changeSign = new TransformChangeSign();
@@ -804,8 +808,8 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     this.y = y ? y : this.y;
     this.width = width ? width : this.width;
     this.height = height ? height : this.height;
-    this.scaleX = scalex ? scalex : this.scaleX;
-    this.scaleY = scaley ? scaley : this.scaleY;
+    this._scale.x = scalex ? scalex : this._scale.x;
+    this._scale.y = scaley ? scaley : this._scale.y;
   }
 
   init(x, y, width, height, scalex, scaley) {
@@ -955,6 +959,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   }
   /**
    * @get 获得世界坐标系角度
+   * @readonly
    */
 
 
@@ -1003,13 +1008,10 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     this.updateAnchor();
   }
   /**
-   * 宽高对象
-   */
-
-
-  /**
    * 返回宽高对象
    */
+
+
   get size() {
     return this._size;
   }
@@ -1102,9 +1104,10 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
    */
 
 
-  set scale(scale) {
+  setScale(scale) {
     this._scale = scale;
     this.updateWorldScale();
+    this.updateForChildrenAndGraphic();
   }
   /**
    * @description 获得x轴缩放值
@@ -1122,6 +1125,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   set scaleX(scalex) {
     this._scale.x = scalex;
     this.updateWorldScale();
+    this.updateForChildrenAndGraphic();
   }
   /**
    * @description 获得y轴缩放值
@@ -1139,6 +1143,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   set scaleY(scaley) {
     this._scale.y = scaley;
     this.updateWorldScale();
+    this.updateForChildrenAndGraphic();
   }
   /**
    * @description 获得世界缩放尺寸
@@ -1147,16 +1152,14 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
   get worldScale() {
     return this._worldScale;
-  }
-  /**
-   * @description 设置世界缩放尺寸
-   */
+  } // /**
+  //  * @description 设置世界缩放尺寸
+  //  */
+  // set worldScale(scale: Vec2) {
+  //     this._worldScale = scale;
+  //     this.updateLocalScale();
+  // }
 
-
-  set worldScale(scale) {
-    this._worldScale = scale;
-    this.updateLocalScale();
-  }
   /**
    * @description 获得世界x轴缩放值
    */
@@ -1164,16 +1167,14 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
   get worldScaleX() {
     return this._worldScale.x;
-  }
-  /**
-   * @description 设置世界x轴缩放值
-   */
+  } // /**
+  //  * @description 设置世界x轴缩放值
+  //  */
+  // set worldScaleX(scalex: number) {
+  //     this._worldScale.x = scalex;
+  //     this.updateLocalScale();
+  // }
 
-
-  set worldScaleX(scalex) {
-    this._worldScale.x = scalex;
-    this.updateLocalScale();
-  }
   /**
    * @description 获得世界y轴缩放值
    */
@@ -1181,16 +1182,14 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
   get worldScaleY() {
     return this._worldScale.y;
-  }
-  /**
-   * @description 设置世界y轴缩放值
-   */
+  } // /**
+  //  * @description 设置世界y轴缩放值
+  //  */
+  // set worldScaleY(scaley: number) {
+  //     this._worldScale.y = scaley;
+  //     this.updateLocalScale();
+  // }
 
-
-  set worldScaleY(scaley) {
-    this._worldScale.y = scaley;
-    this.updateLocalScale();
-  }
 
   get parent() {
     if (!this.entity) return null;
@@ -1210,7 +1209,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
   set color(color) {
     this._color = color;
-    this.updateRenderColor();
+    this.updateColorGraphic();
   }
   /**
    * @description 对transform做tween补间动画
@@ -1227,8 +1226,9 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   updateForParent() {
     const parent = this.parent;
     if (!parent) return;
-    this.updateWorldPosition();
     this.updateWorldAngle(true);
+    this.updateScaleGraphic();
+    this.updateWorldPosition();
     this.updateWorldScale();
   }
 
@@ -1241,25 +1241,47 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
       child.updateForParent();
     }
   }
+
+  updateForChildrenAndGraphic() {
+    this.updateScaleGraphic();
+    this.updateChildren();
+  }
+
+  updateScaleGraphic() {
+    if (!this.entity || !this.entity.graphic) return;
+    this.entity.graphic.updateScale();
+  }
   /**
   * @todo 如果绑定的entity上的graphic组件实现transformColor接口，则通过updateRenderColor更新颜色
   */
 
 
-  updateRenderColor() {}
+  updateColorGraphic() {
+    this.entity.graphic.updateNormalColor();
+  } // updateLocalScale() {
+  // }
 
-  updateLocalScale() {}
 
-  updateWorldScale() {}
+  updateWorldScale() {
+    if (this.parent && this.parent.parent) {
+      this._worldScale = new Vec2(this.parent.worldScaleX * this.parent.scaleX, this.parent.worldScaleY * this.parent.scaleY);
+      console.log("entity3", this.entity.name);
+    } else if (this.parent && !this.parent.parent) {
+      this._worldScale = new Vec2(this.parent.worldScaleX, this.parent.worldScaleY);
+      console.log("entity2", this.entity.name);
+    } else {
+      this._worldScale = new Vec2(this.scale.x, this.scale.y);
+      console.log("entity1", this._worldScale);
+    }
+  }
 
   updateSize() {}
 
-  updateAnchor() {}
+  updateAnchor() {} // updateLocalAngle() {
+  //     this._angle = this.parent ? this._worldAngle - this.parent.worldAngle : this._worldAngle;
+  //     this.updateChildren();
+  // }
 
-  updateLocalAngle() {
-    this._angle = this.parent ? this._worldAngle - this.parent.worldAngle : this._worldAngle;
-    this.updateChildren();
-  }
 
   updateWorldAngle(isforparent) {
     const oldAngle = this._worldAngle;
@@ -1815,6 +1837,10 @@ export let GraphicComponent = rClass(_class30 = (_temp14 = class GraphicComponen
     this.visible = true;
   }
 
+  updateNormalColor() {}
+
+  updateScale() {}
+
   draw() {}
 
 }, _temp14)) || _class30;
@@ -1995,6 +2021,10 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
     this.align = align;
   }
 
+  updateNormalColor() {}
+
+  updateScale() {}
+
   draw() {
     Rabbit.Instance.context.save();
     const transform = this.entity.transform;
@@ -2007,7 +2037,19 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
     Rabbit.Instance.context.translate(transform.worldX, transform.worldY); // console.log("x,y", transform.worldX, transform.worldY)
 
     Rabbit.Instance.context.rotate(value);
-    Rabbit.Instance.context.fillText(this.text, 0, 0);
+    Rabbit.Instance.context.translate(-transform.worldX, -transform.worldY);
+
+    if (transform.parent) {
+      Rabbit.Instance.context.translate(transform.parent.worldX, transform.parent.worldY);
+      Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
+      Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
+    } else {
+      // console.log("scale2", transform.worldScale);
+      Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
+      Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
+      Rabbit.Instance.context.fillText(this.text, 0, 0);
+    }
+
     Rabbit.Instance.context.restore();
   }
 

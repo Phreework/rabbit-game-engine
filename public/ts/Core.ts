@@ -859,8 +859,8 @@ export class Transform extends Component {
         this.y = y ? y : this.y;
         this.width = width ? width : this.width;
         this.height = height ? height : this.height;
-        this.scaleX = scalex ? scalex : this.scaleX;
-        this.scaleY = scaley ? scaley : this.scaleY;
+        this._scale.x = scalex ? scalex : this._scale.x;
+        this._scale.y = scaley ? scaley : this._scale.y;
     }
 
     init(x?: number, y?: number, width?: number, height?: number, scalex?: number, scaley?: number) {
@@ -1134,9 +1134,10 @@ export class Transform extends Component {
     /**
      * @description 设置世界缩放尺寸
      */
-    set scale(scale: Vec2) {
+    setScale(scale: Vec2) {
         this._scale = scale;
         this.updateWorldScale();
+        this.updateForChildrenAndGraphic();
     }
 
     /**
@@ -1152,6 +1153,7 @@ export class Transform extends Component {
     set scaleX(scalex: number) {
         this._scale.x = scalex;
         this.updateWorldScale();
+        this.updateForChildrenAndGraphic();
     }
 
     /**
@@ -1167,6 +1169,7 @@ export class Transform extends Component {
     set scaleY(scaley: number) {
         this._scale.y = scaley;
         this.updateWorldScale();
+        this.updateForChildrenAndGraphic();
     }
 
 
@@ -1177,13 +1180,13 @@ export class Transform extends Component {
         return this._worldScale;
     }
 
-    /**
-     * @description 设置世界缩放尺寸
-     */
-    set worldScale(scale: Vec2) {
-        this._worldScale = scale;
-        this.updateLocalScale();
-    }
+    // /**
+    //  * @description 设置世界缩放尺寸
+    //  */
+    // set worldScale(scale: Vec2) {
+    //     this._worldScale = scale;
+    //     this.updateLocalScale();
+    // }
 
     /**
      * @description 获得世界x轴缩放值
@@ -1192,13 +1195,13 @@ export class Transform extends Component {
         return this._worldScale.x;
     }
 
-    /**
-     * @description 设置世界x轴缩放值
-     */
-    set worldScaleX(scalex: number) {
-        this._worldScale.x = scalex;
-        this.updateLocalScale();
-    }
+    // /**
+    //  * @description 设置世界x轴缩放值
+    //  */
+    // set worldScaleX(scalex: number) {
+    //     this._worldScale.x = scalex;
+    //     this.updateLocalScale();
+    // }
 
     /**
      * @description 获得世界y轴缩放值
@@ -1207,13 +1210,13 @@ export class Transform extends Component {
         return this._worldScale.y;
     }
 
-    /**
-     * @description 设置世界y轴缩放值
-     */
-    set worldScaleY(scaley: number) {
-        this._worldScale.y = scaley;
-        this.updateLocalScale();
-    }
+    // /**
+    //  * @description 设置世界y轴缩放值
+    //  */
+    // set worldScaleY(scaley: number) {
+    //     this._worldScale.y = scaley;
+    //     this.updateLocalScale();
+    // }
     get parent(): Transform {
         if (!this.entity) return null;
         return (!this.entity.parent) ? null : this.entity.parent.transform;
@@ -1228,7 +1231,7 @@ export class Transform extends Component {
     }
     set color(color: Color) {
         this._color = color;
-        this.updateRenderColor();
+        this.updateColorGraphic();
     }
     /**
      * @description 对transform做tween补间动画
@@ -1247,8 +1250,9 @@ export class Transform extends Component {
     updateForParent() {
         const parent = this.parent;
         if (!parent) return;
-        this.updateWorldPosition();
         this.updateWorldAngle(true);
+        this.updateScaleGraphic();
+        this.updateWorldPosition();
         this.updateWorldScale();
     }
 
@@ -1260,17 +1264,35 @@ export class Transform extends Component {
             child.updateForParent();
         }
     }
+
+    updateForChildrenAndGraphic() {
+        this.updateScaleGraphic();
+        this.updateChildren();
+    }
+    updateScaleGraphic() {
+        if (!this.entity || !this.entity.graphic) return;
+        this.entity.graphic.updateScale();
+    }
     /**
  * @todo 如果绑定的entity上的graphic组件实现transformColor接口，则通过updateRenderColor更新颜色
  */
-    updateRenderColor() {
-
+    updateColorGraphic() {
+        this.entity.graphic.updateNormalColor();
     }
-    updateLocalScale() {
+    // updateLocalScale() {
 
-    }
+    // }
     updateWorldScale() {
-
+        if (this.parent && this.parent.parent) {
+            this._worldScale = new Vec2(this.parent.worldScaleX * this.parent.scaleX, this.parent.worldScaleY * this.parent.scaleY);
+            console.log("entity3", this.entity.name);
+        } else if (this.parent && !this.parent.parent) {
+            this._worldScale = new Vec2(this.parent.worldScaleX, this.parent.worldScaleY);
+            console.log("entity2", this.entity.name);
+        } else {
+            this._worldScale = new Vec2(this.scale.x, this.scale.y);
+            console.log("entity1", this._worldScale);
+        }
     }
     updateSize() {
 
@@ -1319,8 +1341,8 @@ export class Transform extends Component {
         this.updateChildren();
     }
     updateLocalPosition() {
-        this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
-        this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldY;
+        this.position.x = this.parent ? (this.worldPosition.x - this.parent.worldPosition.x) : this.worldX;
+        this.position.y = this.parent ? (this.worldPosition.y - this.parent.worldPosition.y) : this.worldY;
         this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
         this.updateChildren();
     }
@@ -1806,6 +1828,12 @@ export class GraphicComponent extends Component {
     w: number = 0;
     h: number = 0;
     visible: boolean = true;
+    updateNormalColor() {
+
+    }
+    updateScale() {
+
+    }
     draw() {
 
     }
@@ -1972,7 +2000,11 @@ export class Text extends GraphicComponent {
     setAlign(align: TextAlignType) {
         this.align = align;
     }
+    updateNormalColor() {
 
+    }
+    updateScale() {
+    }
     draw() {
         Rabbit.Instance.context.save();
         const transform = this.entity.transform;
@@ -1983,11 +2015,24 @@ export class Text extends GraphicComponent {
         Rabbit.Instance.context.font = this.textSize + "px " + this.font;
         Rabbit.Instance.context.fillStyle = this.colour;
 
+
         Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
         // console.log("x,y", transform.worldX, transform.worldY)
         Rabbit.Instance.context.rotate(value);
+        Rabbit.Instance.context.translate(-transform.worldX, -transform.worldY);
 
-        Rabbit.Instance.context.fillText(this.text, 0, 0);
+
+        if (transform.parent) {
+            Rabbit.Instance.context.translate(transform.parent.worldX, transform.parent.worldY);
+            Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
+            Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
+        } else {
+            // console.log("scale2", transform.worldScale);
+            Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
+            Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
+            Rabbit.Instance.context.fillText(this.text, 0, 0);
+        }
+
         Rabbit.Instance.context.restore();
     }
 
