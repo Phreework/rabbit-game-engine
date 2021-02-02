@@ -1,5 +1,6 @@
 import * as rEngine from "../ts/Core.js";
 import { Entity, Rabbit, KeyType, Text, World, Component } from "../ts/Core.js";
+import Tween from "../ts/tweens/Tween.js";
 import { main as demo2 } from "./EffectButton.js";
 import { main as demo3 } from "./IsoGame.js";
 import { main as demo4 } from "./LightItUp.js";
@@ -69,13 +70,18 @@ export class TestDemo {
                 console.log("lala 事件触发" + value1 + value2);
                 // entity.listenOff("lala");
             }
+            const tween = new Tween(entity.transform).to({ x: 600 }, 1000).start(0);
+            let time = 0;
             entity.listenOnce("lala", func, this);
             entity.listen(rEngine.EventType.MOUSE_DOWN, () => {
+                time += 50;
+                tween.update(time)
                 Rabbit.Instance.message("lala", 2, 3);
             });
             entity.listen(rEngine.EventType.MOUSE_PRESS, (key) => {
-                console.log("key",key);
+                console.log("key", key);
             });
+
         }
         return world;
     }
@@ -87,6 +93,6 @@ class GlobalControl extends Component {
         TestDemo.nextWorld();
     }
     start() {
-        this.entity.listen(rEngine.EventType.KEY_DOWN, this.keyDown,this);
+        this.entity.listen(rEngine.EventType.KEY_DOWN, this.keyDown, this);
     }
 }

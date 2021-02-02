@@ -1,4 +1,4 @@
-import * as TWEEN from './Index'
+import * as TWEEN from './Index.js'
 
 export const tests = {
 	hello(test: Test): void {

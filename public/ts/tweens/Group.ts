@@ -1,5 +1,5 @@
-import now from './Now'
-import type {Tween, UnknownProps} from './Tween'
+import now from './Now.js'
+import type {Tween, UnknownProps} from './Tween.js'
 
 /**
  * Controlling groups of tweens

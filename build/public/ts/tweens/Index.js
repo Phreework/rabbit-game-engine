@@ -6,14 +6,13 @@
  * See https://github.com/tweenjs/tween.js/graphs/contributors for the full list of contributors.
  * Thank you all, you're awesome!
  */
-import Easing from './Easing';
-import Group from './Group';
-import Interpolation from './Interpolation';
-import now from './Now';
-import Sequence from './Sequence';
-import Tween from './Tween';
-import VERSION from './Version';
-import { mainGroup } from './mainGroup';
+import Easing from './Easing.js';
+import Group from './Group.js';
+import Interpolation from './Interpolation.js';
+import now from './Now.js';
+import Sequence from './Sequence.js';
+import Tween from './Tween.js';
+import { mainGroup } from './mainGroup.js';
 const nextId = Sequence.nextId;
 /**
  * Controlling groups of tweens
@@ -33,7 +32,7 @@ const add = TWEEN.add.bind(TWEEN);
 const remove = TWEEN.remove.bind(TWEEN);
 const update = TWEEN.update.bind(TWEEN); // NOTE! Make sure both lists of exports below are kept in sync:
 
-export { Easing, Group, Interpolation, now, Sequence, nextId, Tween, VERSION, getAll, removeAll, add, remove, update };
+export { Easing, Group, Interpolation, now, Sequence, nextId, Tween, getAll, removeAll, add, remove, update };
 const exports = {
   Easing,
   Group,
@@ -42,7 +41,6 @@ const exports = {
   Sequence,
   nextId,
   Tween,
-  VERSION,
   getAll,
   removeAll,
   add,

@@ -744,7 +744,7 @@ export class EventListener {
     checkEmit(dispatcher: EventDisPatcher): boolean {
         if (!this.entity || !this.entity.active || !this.func) return;
         if (dispatcher.eventType == this.eventType) {
-            if (this.eventType==EventType.POSITION_CHANGED && dispatcher.args[0]!=this.entity){
+            if (this.eventType == EventType.POSITION_CHANGED && dispatcher.args[0] != this.entity) {
                 return false;
             }
             this.func.apply(this.bind, dispatcher.args);
@@ -1064,8 +1064,7 @@ export class Transform extends Component {
      */
     set position(position: Vec3) {
         this._position = position;
-        this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
-        this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+        this.updateWorldPosition();
     }
 
     /**
@@ -1369,7 +1368,6 @@ export class Transform extends Component {
     updateForParent() {
         const parent = this.parent;
         if (!parent) return;
-        this.updateWorldAngle(true);
         this.updateScaleGraphic();
         this.updateWorldPosition();
         this.updateWorldScale();
@@ -1423,14 +1421,8 @@ export class Transform extends Component {
     //     this._angle = this.parent ? this._worldAngle - this.parent.worldAngle : this._worldAngle;
     //     this.updateChildren();
     // }
-    updateWorldAngle(isforparent?: boolean) {
-        const oldAngle: number = this._worldAngle;
+    updateWorldAngle() {
         this._worldAngle = this.parent ? this.parent.worldAngle + this._angle : this._angle;
-        if (isforparent) {
-            const angleFix = this._worldAngle - oldAngle;
-            const fixPoint = Transform.calcNewPoint(this.worldPosition, this.parent.worldPosition, angleFix);
-            this.worldPosition = new Vec3(fixPoint.x, fixPoint.y, 0);
-        }
         this.updateChildren();
     }
     setPosition(x: number);
@@ -1454,16 +1446,22 @@ export class Transform extends Component {
      * @todo 感觉parent为空的时候对坐标的处理还有些问题
      */
     updateWorldPosition() {
-        this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
-        this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
-        this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+        this._worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
+        this._worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+        this._worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+        if (this.entity) {
+
+            console.log("parentPosX", this.parent && this.parent.worldPosition.x);
+            console.log("localX", this.x);
+            console.log(this.entity.name, this._worldPosition.x);
+        }
         if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
         this.updateChildren();
     }
     updateLocalPosition() {
-        this.position.x = this.parent ? (this.worldPosition.x - this.parent.worldPosition.x) : this.worldX;
-        this.position.y = this.parent ? (this.worldPosition.y - this.parent.worldPosition.y) : this.worldY;
-        this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+        this._position.x = this.parent ? (this.worldPosition.x - this.parent.worldPosition.x) : this.worldX;
+        this._position.y = this.parent ? (this.worldPosition.y - this.parent.worldPosition.y) : this.worldY;
+        this._position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
         if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
         this.updateChildren();
     }
@@ -2181,6 +2179,9 @@ export class Text extends GraphicComponent {
         if (transform.parent) {
             Rabbit.Instance.context.translate(transform.parent.worldX, transform.parent.worldY);
             Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
+            const angleParent = transform.parent.worldAngle * Math.PI / 180;
+            Rabbit.Instance.context.rotate(angleParent);
+
             Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
         } else {
             // console.log("scale2", transform.worldScale);

@@ -7,14 +7,13 @@
  * Thank you all, you're awesome!
  */
 
-import Easing from './Easing'
-import Group from './Group'
-import Interpolation from './Interpolation'
-import now from './Now'
-import Sequence from './Sequence'
-import Tween from './Tween'
-import VERSION from './Version'
-import {mainGroup} from './mainGroup'
+import Easing from './Easing.js'
+import Group from './Group.js'
+import Interpolation from './Interpolation.js'
+import now from './Now.js'
+import Sequence from './Sequence.js'
+import Tween from './Tween.js'
+import {mainGroup} from './mainGroup.js'
 
 const nextId = Sequence.nextId
 
@@ -38,7 +37,7 @@ const update = TWEEN.update.bind(TWEEN)
 
 // NOTE! Make sure both lists of exports below are kept in sync:
 
-export {Easing, Group, Interpolation, now, Sequence, nextId, Tween, VERSION, getAll, removeAll, add, remove, update}
+export {Easing, Group, Interpolation, now, Sequence, nextId, Tween, getAll, removeAll, add, remove, update}
 
 const exports = {
 	Easing,
@@ -48,7 +47,6 @@ const exports = {
 	Sequence,
 	nextId,
 	Tween,
-	VERSION,
 	getAll,
 	removeAll,
 	add,

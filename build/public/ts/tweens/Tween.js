@@ -6,11 +6,11 @@
  * See https://github.com/tweenjs/tween.js/graphs/contributors for the full list of contributors.
  * Thank you all, you're awesome!
  */
-import Easing from './Easing';
-import Interpolation from './Interpolation';
-import { mainGroup } from './mainGroup';
-import Sequence from './Sequence';
-import now from './Now';
+import Easing from './Easing.js';
+import Interpolation from './Interpolation.js';
+import { mainGroup } from './mainGroup.js';
+import Sequence from './Sequence.js';
+import now from './Now.js';
 export class Tween {
   // eslint-disable-next-line
   constructor(_object, _group = mainGroup) {

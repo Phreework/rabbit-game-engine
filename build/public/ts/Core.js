@@ -1043,8 +1043,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
   set position(position) {
     this._position = position;
-    this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
-    this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+    this.updateWorldPosition();
   }
   /**
    * @get 获得本地坐标下x的值
@@ -1367,7 +1366,6 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   updateForParent() {
     const parent = this.parent;
     if (!parent) return;
-    this.updateWorldAngle(true);
     this.updateScaleGraphic();
     this.updateWorldPosition();
     this.updateWorldScale();
@@ -1424,16 +1422,8 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   // }
 
 
-  updateWorldAngle(isforparent) {
-    const oldAngle = this._worldAngle;
+  updateWorldAngle() {
     this._worldAngle = this.parent ? this.parent.worldAngle + this._angle : this._angle;
-
-    if (isforparent) {
-      const angleFix = this._worldAngle - oldAngle;
-      const fixPoint = Transform.calcNewPoint(this.worldPosition, this.parent.worldPosition, angleFix);
-      this.worldPosition = new Vec3(fixPoint.x, fixPoint.y, 0);
-    }
-
     this.updateChildren();
   }
 
@@ -1458,17 +1448,24 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   updateWorldPosition() {
-    this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
-    this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
-    this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+    this._worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
+    this._worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+    this._worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+
+    if (this.entity) {
+      console.log("parentPosX", this.parent && this.parent.worldPosition.x);
+      console.log("localX", this.x);
+      console.log(this.entity.name, this._worldPosition.x);
+    }
+
     if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
     this.updateChildren();
   }
 
   updateLocalPosition() {
-    this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
-    this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldY;
-    this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+    this._position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
+    this._position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldY;
+    this._position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
     if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
     this.updateChildren();
   }
@@ -2233,6 +2230,8 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
     if (transform.parent) {
       Rabbit.Instance.context.translate(transform.parent.worldX, transform.parent.worldY);
       Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
+      const angleParent = transform.parent.worldAngle * Math.PI / 180;
+      Rabbit.Instance.context.rotate(angleParent);
       Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
     } else {
       // console.log("scale2", transform.worldScale);

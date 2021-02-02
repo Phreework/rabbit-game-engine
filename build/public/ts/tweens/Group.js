@@ -1,4 +1,4 @@
-import now from './Now';
+import now from './Now.js';
 
 /**
  * Controlling groups of tweens
