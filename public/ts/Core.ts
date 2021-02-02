@@ -380,7 +380,14 @@ export class Rabbit {
         this.world.mouseDown();
         this.mouse.pressed = true;
     }
-
+    /**
+     * 鼠标下键按下
+     * @param event
+     */
+    mouseUp(): void {
+        this.world.mouseUp();
+        this.mouse.pressed = true;
+    }
     /**
      * 鼠标移动
      * @param event 
@@ -498,6 +505,12 @@ export class Rabbit {
             this._nextWorld = null;
         }
     }
+    /**
+     * 发送事件广播
+     */
+    message(event: EventType | string, ...params) {
+        Rabbit.Instance.eventSystem.sendMessage(new EventDisPatcher(event, params));
+    }
 }
 
 export let rabbit: Rabbit = null;
@@ -591,11 +604,13 @@ export class CompSystem {
  */
 @rClass
 export class EventSystem {
+
     initEventRegister() {
         Rabbit.Instance.htmlCanvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e); };
         document.onkeydown = (e) => { Rabbit.Instance.keyDown(e); };
         document.onkeyup = (e) => { Rabbit.Instance.keyUp(e); };
         Rabbit.Instance.htmlCanvas.onmousemove = (e) => { Rabbit.Instance.mouseMove(e); };
+        Rabbit.Instance.htmlCanvas.onmouseup = (e) => { Rabbit.Instance.mouseUp(); };
         Rabbit.Instance.htmlCanvas.onmouseout = (e) => { Rabbit.Instance.mouseOut(e); };
     }
 
@@ -651,7 +666,94 @@ export class EventSystem {
             if (entities[i]) entities[i].mouseDown();
         }
     }
+    mouseUp() {
+        const entities = Rabbit.Instance.world.entities;
+        for (let i = entities.length - 1; i >= 0; --i) {
+            if (entities[i]) entities[i].mouseUp();
+        }
+    }
 
+    removeListener(event: string, func?: Function, bind?: Object) {
+        const listeners = Rabbit.Instance.world.eventListeners;
+        const deleteListeners: EventListener[] = [];
+        for (let i = listeners.length - 1; i >= 0; --i) {
+            const listener = listeners[i];
+            if (func) {
+                if (listener.eventType == event && listener.func == func) {
+                    deleteListeners.push(listener);
+                }
+            } else if (func && bind) {
+                if (listener.eventType == event && listener.func == func && listener.entity == bind) {
+                    deleteListeners.push(listener);
+                }
+            } else {
+                if (listener.eventType == event) {
+                    deleteListeners.push(listener);
+                }
+            }
+        }
+        deleteListeners.forEach((item) => {
+            EngineTools.deleteItemFromList(item, listeners);
+        });
+    }
+    addListener(listener: EventListener) {
+        Rabbit.Instance.world.eventListeners.push(listener);
+    }
+
+    sendMessage(dispatcher: EventDisPatcher) {
+        const listeners = Rabbit.Instance.world.eventListeners;
+        const deleteListeners: EventListener[] = [];
+        for (let i = listeners.length - 1; i >= 0; --i) {
+            const listener = listeners[i];
+            const isEmit: boolean = listener.checkEmit(dispatcher);
+            if (isEmit && listener.isOnce) {
+                deleteListeners.push(listener);
+            }
+        }
+        deleteListeners.forEach((item) => {
+            EngineTools.deleteItemFromList(item, listeners);
+        });
+    }
+
+}
+export class EventListener {
+
+    entity: Entity;
+    eventType: string;
+    func: Function;
+    isOnce: boolean = true;
+    bind: Object;
+    constructor(event: EventType | string, func: Function, bind: Object, entity: Entity, isonce: boolean) {
+        this.eventType = event;
+        this.func = func;
+        this.bind = bind;
+        this.entity = entity;
+        this.isOnce = isonce;
+    }
+    checkEmit(dispatcher: EventDisPatcher): boolean {
+        if (dispatcher.eventType == this.eventType) {
+            this.func.apply(this.bind, ...dispatcher.args);
+            return true;
+        }
+        return false;
+    }
+}
+export class EventDisPatcher {
+    eventType: EventType | string;
+    args: any[];
+    constructor(event: EventType | string, ...args) {
+        this.eventType = event;
+        this.args = args;
+    }
+}
+export enum EventType {
+    MOUSE_DOWN = "mouseDown",
+    MOUSE_UP = "mouseUp",
+    MOUSE_PRESS = "mousePress",
+    KEY_DOWN = "keyDown",
+    KEY_PRESS = "keyPress",
+    KEY_UP = "keyUp",
+    POSITION_CHANGED="positionChanged"
 }
 @rClass
 export class RabObject {
@@ -1365,6 +1467,10 @@ export class Transform extends Component {
 export class Entity extends RabObject {
 
     /**
+     * 系统事件类型
+     */
+    static EventType = EventType;
+    /**
      * 实体的变换组件
      */
     transform: Transform;
@@ -1459,7 +1565,7 @@ export class Entity extends RabObject {
     keyUp(key: number) { };
 
     mouseDown() { };
-
+    mouseUp() { };
     onDestroy() { };
 
     onAdd() {
@@ -1599,7 +1705,18 @@ export class Entity extends RabObject {
             parent.addChild(this);
         }
     }
+
+    listen(event: EventType | string, func: Function, bind: Object) {
+        Rabbit.Instance.eventSystem.addListener(new EventListener(event, func, bind, this, false));
+    }
+    listenOnce(event: EventType | string, func: Function, bind: Object) {
+        Rabbit.Instance.eventSystem.addListener(new EventListener(event, func, bind, this, true));
+    }
+    listenOff(event: EventType | string, func?: Function, bind?: Object) {
+        Rabbit.Instance.eventSystem.removeListener(event, func, bind);
+    }
 }
+
 @rClass
 export class Sfx extends RabObject {
 
@@ -1674,7 +1791,10 @@ export class World extends RabObject {
      */
     eventSystem: EventSystem = Rabbit.Instance.eventSystem;
 
-
+    /**
+     * 事件监听器集合
+     */
+    eventListeners: EventListener[] = [];
     /**
      * 构造器函数，调用创建一个场景
      * @param name 游戏场景的名称
@@ -1761,7 +1881,12 @@ export class World extends RabObject {
     mouseDown() {
         this.eventSystem.mouseDown();
     }
-
+    /**
+     * 鼠标抬起事件
+     */
+    mouseUp() {
+        this.eventSystem.mouseUp();
+    }
     /**
      * 按键按下事件，无需手动调用
      */
@@ -1783,6 +1908,7 @@ export class World extends RabObject {
     stop() {
         this.entities = [];
         this.preDestroys = [];
+        this.eventListeners = [];
         this.maxId = 0;
     }
 

@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _temp10, _class23, _temp11, _class25, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _class35, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44, _temp21, _class46, _class47, _temp22, _class48, _temp23, _class50, _temp24, _class52, _temp25, _class54;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _class22, _temp10, _class23, _temp11, _class25, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _class35, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44, _temp21, _class46, _class47, _temp22, _class48, _temp23, _class50, _temp24, _class52, _temp25, _class54;
 
 /** 
  * --------------------------------------------------------
@@ -318,6 +318,16 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.mouse.pressed = true;
   }
   /**
+   * 鼠标下键按下
+   * @param event
+   */
+
+
+  mouseUp() {
+    this.world.mouseUp();
+    this.mouse.pressed = true;
+  }
+  /**
    * 鼠标移动
    * @param event 
    */
@@ -450,6 +460,14 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
       this._nextWorld = null;
     }
   }
+  /**
+   * 发送事件广播
+   */
+
+
+  message(event, ...params) {
+    Rabbit.Instance.eventSystem.sendMessage(new EventDisPatcher(event, params));
+  }
 
 }, _class2.Instance = null, _class2.images = new Map(), _class2.audioChannels = [], _class2.version = rabbitVersion, _temp)) || _class;
 export let rabbit = null;
@@ -557,6 +575,10 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
       Rabbit.Instance.mouseMove(e);
     };
 
+    Rabbit.Instance.htmlCanvas.onmouseup = e => {
+      Rabbit.Instance.mouseUp();
+    };
+
     Rabbit.Instance.htmlCanvas.onmouseout = e => {
       Rabbit.Instance.mouseOut(e);
     };
@@ -619,7 +641,109 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
     }
   }
 
+  mouseUp() {
+    const entities = Rabbit.Instance.world.entities;
+
+    for (let i = entities.length - 1; i >= 0; --i) {
+      if (entities[i]) entities[i].mouseUp();
+    }
+  }
+
+  removeListener(event, func, bind) {
+    const listeners = Rabbit.Instance.world.eventListeners;
+    const deleteListeners = [];
+
+    for (let i = listeners.length - 1; i >= 0; --i) {
+      const listener = listeners[i];
+
+      if (func) {
+        if (listener.eventType == event && listener.func == func) {
+          deleteListeners.push(listener);
+        }
+      } else if (func && bind) {
+        if (listener.eventType == event && listener.func == func && listener.entity == bind) {
+          deleteListeners.push(listener);
+        }
+      } else {
+        if (listener.eventType == event) {
+          deleteListeners.push(listener);
+        }
+      }
+    }
+
+    deleteListeners.forEach(item => {
+      EngineTools.deleteItemFromList(item, listeners);
+    });
+  }
+
+  addListener(listener) {
+    Rabbit.Instance.world.eventListeners.push(listener);
+  }
+
+  sendMessage(dispatcher) {
+    const listeners = Rabbit.Instance.world.eventListeners;
+    const deleteListeners = [];
+
+    for (let i = listeners.length - 1; i >= 0; --i) {
+      const listener = listeners[i];
+      const isEmit = listener.checkEmit(dispatcher);
+
+      if (isEmit && listener.isOnce) {
+        deleteListeners.push(listener);
+      }
+    }
+
+    deleteListeners.forEach(item => {
+      EngineTools.deleteItemFromList(item, listeners);
+    });
+  }
+
 }, _class8.Instance = void 0, _temp4)) || _class7;
+export class EventListener {
+  constructor(event, func, bind, entity, isonce) {
+    this.entity = void 0;
+    this.eventType = void 0;
+    this.func = void 0;
+    this.isOnce = true;
+    this.bind = void 0;
+    this.eventType = event;
+    this.func = func;
+    this.bind = bind;
+    this.entity = entity;
+    this.isOnce = isonce;
+  }
+
+  checkEmit(dispatcher) {
+    if (dispatcher.eventType == this.eventType) {
+      this.func.apply(this.bind, ...dispatcher.args);
+      return true;
+    }
+
+    return false;
+  }
+
+}
+export class EventDisPatcher {
+  constructor(event, ...args) {
+    this.eventType = void 0;
+    this.args = void 0;
+    this.eventType = event;
+    this.args = args;
+  }
+
+}
+export let EventType;
+
+(function (EventType) {
+  EventType["MOUSE_DOWN"] = "mouseDown";
+  EventType["MOUSE_UP"] = "mouseUp";
+  EventType["MOUSE_PRESS"] = "mousePress";
+  EventType["KEY_DOWN"] = "keyDown";
+  EventType["KEY_PRESS"] = "keyPress";
+  EventType["KEY_UP"] = "keyUp";
+  EventType["POSITION_CHANGED"] = "positionChanged";
+})(EventType || (EventType = {}));
+
 export let RabObject = rClass(_class9 = class RabObject {
   clone() {
     let f = function () {};
@@ -1343,7 +1467,11 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   }
 
 }, _temp9)) || _class19;
-export let Entity = rClass(_class21 = (_temp10 = class Entity extends RabObject {
+export let Entity = rClass(_class21 = (_temp10 = _class22 = class Entity extends RabObject {
+  /**
+   * 系统事件类型
+   */
+
   /**
    * 实体的变换组件
    */
@@ -1439,6 +1567,8 @@ export let Entity = rClass(_class21 = (_temp10 = class Entity extends RabObject 
   keyUp(key) {}
 
   mouseDown() {}
+
+  mouseUp() {}
 
   onDestroy() {}
 
@@ -1589,7 +1719,19 @@ export let Entity = rClass(_class21 = (_temp10 = class Entity extends RabObject 
     }
   }
 
-}, _temp10)) || _class21;
+  listen(event, func, bind) {
+    Rabbit.Instance.eventSystem.addListener(new EventListener(event, func, bind, this, false));
+  }
+
+  listenOnce(event, func, bind) {
+    Rabbit.Instance.eventSystem.addListener(new EventListener(event, func, bind, this, true));
+  }
+
+  listenOff(event, func, bind) {
+    Rabbit.Instance.eventSystem.removeListener(event, func, bind);
+  }
+
+}, _class22.EventType = EventType, _temp10)) || _class21;
 export let Sfx = rClass(_class23 = (_temp11 = class Sfx extends RabObject {
   constructor(soundurl) {
     super();
@@ -1654,6 +1796,10 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
    */
 
   /**
+   * 事件监听器集合
+   */
+
+  /**
    * 构造器函数，调用创建一个场景
    * @param name 游戏场景的名称
    */
@@ -1666,6 +1812,7 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
     this.maxId = 0;
     this.entitySystem = Rabbit.Instance.entitySystem;
     this.eventSystem = Rabbit.Instance.eventSystem;
+    this.eventListeners = [];
     this.init = void 0;
     this.name = name;
   }
@@ -1761,6 +1908,14 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
     this.eventSystem.mouseDown();
   }
   /**
+   * 鼠标抬起事件
+   */
+
+
+  mouseUp() {
+    this.eventSystem.mouseUp();
+  }
+  /**
    * 按键按下事件，无需手动调用
    */
 
@@ -1785,6 +1940,7 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
   stop() {
     this.entities = [];
     this.preDestroys = [];
+    this.eventListeners = [];
     this.maxId = 0;
   }
   /**

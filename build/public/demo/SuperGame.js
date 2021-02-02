@@ -108,7 +108,7 @@ export default class SuperGame {
     this.root.addChild(bullet);
     const bulletStartPos = new Vec3(this.player.transform.x, this.player.transform.top);
     bullet.transform.setPosition(bulletStartPos);
-    const bulletFlyTween = new Tween();
+    const bulletFlyTween = new Tween(bullet);
     bulletFlyTween.target(bullet).by(1, {
       y: 300
     }).call(() => {
@@ -195,25 +195,24 @@ export class TouchController {
 
   addEventHandler() {
     // touchstart 当手指触摸到屏幕时
-    this.target.on('touchstart', event => {
+    this.target.listen(Entity.EventType.MOUSE_DOWN, event => {
       if (!this.isAllowTouch) return;
       this.startPoint = event.getLocation();
       this.startEvent();
-    }); //touchend 当手指在目标节点区域内离开屏幕时。 */
+    }, this); //touchend 当手指在目标节点区域内离开屏幕时。 */
 
-    this.target.on('touchend', event => {
+    this.target.listen(Entity.EventType.MOUSE_UP, event => {
       if (!this.isAllowTouch) return;
       this.touchEnd(event);
-    });
-    this.target.on('touchmove', event => {
+    }, this);
+    this.target.listen(Entity.EventType.MOUSE_PRESS, event => {
       if (!this.isAllowTouch) return;
       this.touchMove(event);
-    }); //touchcancel 当手指在目标节点区域外离开屏幕时
-
-    this.target.on('touchcancel', event => {
-      if (!this.isAllowTouch) return;
-      this.touchEnd(event);
-    });
+    }, this); //touchcancel 当手指在目标节点区域外离开屏幕时
+    // this.target.listen('touchcancel', (event) => {
+    //     if (!this.isAllowTouch) return;
+    //     this.touchEnd(event);
+    // },this);
   }
 
   touchEnd(event) {
@@ -240,10 +239,9 @@ export class TouchController {
   }
 
   destroy() {
-    this.target.off("touchstart");
-    this.target.off("touchend");
-    this.target.off("touchmove");
-    this.target.off("touchcancel");
+    this.target.listenOff(Entity.EventType.MOUSE_DOWN);
+    this.target.listenOff(Entity.EventType.MOUSE_UP);
+    this.target.listenOff(Entity.EventType.MOUSE_PRESS); // this.target.listenOff("touchcancel");
   }
 
 }
@@ -313,12 +311,12 @@ export class SuperBoxCollider extends Component {
 
   onLoad() {
     SuperBoxCollider.addComInst(this);
-    this.entity.on(Entity.EventType.POSITION_CHANGED, this.updateBox, this);
+    this.entity.listen(Entity.EventType.POSITION_CHANGED, this.updateBox, this);
     this.box = this.entity.transform.getRect();
   }
 
   onDestroy() {
-    this.entity.off(Entity.EventType.POSITION_CHANGED, this.updateBox, this);
+    this.entity.listenOff(Entity.EventType.POSITION_CHANGED, this.updateBox, this);
     SuperBoxCollider.deleteComInst(this);
   }
 

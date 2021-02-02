@@ -62,12 +62,20 @@ export class TestDemo {
       child2.setParent(entity);
       console.log("entity", entity);
 
-      entity.mouseDown = () => {
+      const func = (value1, value2) => {
         console.log("mousedown事件执行");
         entity.transform.angle = 30;
         entity.transform.scaleX = 2;
-        entity.transform.scaleY = 2;
-        console.log("entity transform", child1.transform);
+        entity.transform.scaleY = 2; // console.log("entity transform", child1.transform);
+
+        console.log("lala 事件触发" + value1 + value2);
+        entity.listenOff("lala");
+      };
+
+      entity.listen("lala", func, this);
+
+      entity.mouseDown = () => {
+        Rabbit.Instance.message("lala", 2, 3);
       };
     };
 
