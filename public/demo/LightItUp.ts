@@ -1,4 +1,4 @@
-import { Entity, Circle, SplashCanvas, Sfx, Rabbit, World, Component, AudioSystem } from "../ts/Core.js";
+import { Entity, Circle, SplashCanvas, Sfx, Rabbit, World, Component, AudioSystem, EventType } from "../ts/Core.js";
 class Light extends Component {
     gx: any;
     gy: any;
@@ -9,7 +9,7 @@ class Light extends Component {
     dark: SplashCanvas;
     light: SplashCanvas;
 
-    init(gx, gy, radius, board){
+    init(gx, gy, radius, board) {
         this.gx = gx;
         this.gy = gy;
         let x = gx * (radius * 2 + 1);
@@ -32,11 +32,11 @@ class Light extends Component {
         this.entity.graphic = this.dark;
     }
     onLoad() {
-        this.entity.mouseDown = () => {
+        this.entity.listen(EventType.MOUSE_DOWN, () => {
             console.log("点击棋子");
             if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y]))
                 this.board.light(this.gx, this.gy);
-        }
+        });
     }
 
     flip() {

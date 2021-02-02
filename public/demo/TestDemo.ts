@@ -65,15 +65,17 @@ export class TestDemo {
                 entity.transform.scaleX = 2;
                 entity.transform.scaleY = 2;
                 // console.log("entity transform", child1.transform);
-                
+
                 console.log("lala 事件触发" + value1 + value2);
                 // entity.listenOff("lala");
             }
             entity.listenOnce("lala", func, this);
-            entity.mouseDown = () => {
+            entity.listen(rEngine.EventType.MOUSE_DOWN, () => {
                 Rabbit.Instance.message("lala", 2, 3);
-
-            };
+            });
+            entity.listen(rEngine.EventType.MOUSE_PRESS, (key) => {
+                console.log("key",key);
+            });
         }
         return world;
     }
@@ -85,6 +87,6 @@ class GlobalControl extends Component {
         TestDemo.nextWorld();
     }
     start() {
-        this.entity.keyDown = this.keyDown;
+        this.entity.listen(rEngine.EventType.KEY_DOWN, this.keyDown,this);
     }
 }

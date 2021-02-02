@@ -128,6 +128,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.entitySystem = void 0;
     this.compSystem = void 0;
     this.eventSystem = void 0;
+    this.isMouseDown = false;
     if (Rabbit.Instance) return;
     Rabbit.Instance = this;
     rabbit = Rabbit.Instance;
@@ -309,11 +310,15 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.world.keyUp(event.keyCode);
   }
   /**
-   * 鼠标下键按下
+   * 鼠标是否按下
    */
 
 
+  /**
+   * 鼠标下键按下
+   */
   mouseDown() {
+    this.isMouseDown = true;
     this.world.mouseDown();
     this.mouse.pressed = true;
   }
@@ -324,6 +329,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
 
   mouseUp() {
+    this.isMouseDown = false;
     this.world.mouseUp();
     this.mouse.pressed = true;
   }
@@ -333,11 +339,17 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
    */
 
 
-  mouseMove(event) {
+  mousePress(event) {
+    if (!this.isMouseDown) return;
+
     var mousePos = Rabbit.Instance._mousePosition(event);
 
     this.mouse.x = mousePos[0];
     this.mouse.y = mousePos[1];
+    this.world.mousePress({
+      x: mousePos[0],
+      y: mousePos[1]
+    });
   }
   /**
    * 鼠标出绘制屏幕
@@ -346,6 +358,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
 
   mouseOut(event) {
+    this.isMouseDown = false;
     this.mouse.x = undefined;
     this.mouse.y = undefined;
   }
@@ -572,7 +585,7 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
     };
 
     Rabbit.Instance.htmlCanvas.onmousemove = e => {
-      Rabbit.Instance.mouseMove(e);
+      Rabbit.Instance.mousePress(e);
     };
 
     Rabbit.Instance.htmlCanvas.onmouseup = e => {
@@ -618,35 +631,31 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
   }
 
   keyDown(key) {
-    const entities = Rabbit.Instance.world.entities;
+    this.sendMessage(new EventDisPatcher("keyDown", key));
+  }
 
-    for (let i = entities.length - 1; i >= 0; --i) {
-      if (entities[i]) entities[i].keyDown(key);
-    }
+  keyPress(key) {
+    this.sendMessage(new EventDisPatcher("keyPress", key));
   }
 
   keyUp(key) {
-    const entities = Rabbit.Instance.world.entities;
-
-    for (let i = entities.length - 1; i >= 0; --i) {
-      if (entities[i]) entities[i].keyUp(key);
-    }
+    this.sendMessage(new EventDisPatcher("keyUp", key));
   }
 
   mouseDown() {
-    const entities = Rabbit.Instance.world.entities;
+    this.sendMessage(new EventDisPatcher("mouseDown"));
+  }
 
-    for (let i = entities.length - 1; i >= 0; --i) {
-      if (entities[i]) entities[i].mouseDown();
-    }
+  mousePress(event) {
+    this.sendMessage(new EventDisPatcher("mousePress", event));
   }
 
   mouseUp() {
-    const entities = Rabbit.Instance.world.entities;
+    this.sendMessage(new EventDisPatcher("mouseUp"));
+  }
 
-    for (let i = entities.length - 1; i >= 0; --i) {
-      if (entities[i]) entities[i].mouseUp();
-    }
+  mouseOut() {
+    this.sendMessage(new EventDisPatcher("mouseOut"));
   }
 
   removeListener(event, func, bind) {
@@ -714,8 +723,14 @@ export class EventListener {
   }
 
   checkEmit(dispatcher) {
+    if (!this.entity || !this.entity.active || !this.func) return;
+
     if (dispatcher.eventType == this.eventType) {
-      this.func.apply(this.bind, ...dispatcher.args);
+      if (this.eventType == EventType.POSITION_CHANGED && dispatcher.args[0] != this.entity) {
+        return false;
+      }
+
+      this.func.apply(this.bind, dispatcher.args);
       return true;
     }
 
@@ -738,6 +753,7 @@ export let EventType;
   EventType["MOUSE_DOWN"] = "mouseDown";
   EventType["MOUSE_UP"] = "mouseUp";
   EventType["MOUSE_PRESS"] = "mousePress";
+  EventType["MOUSE_OUT"] = "mouseOut";
   EventType["KEY_DOWN"] = "keyDown";
   EventType["KEY_PRESS"] = "keyPress";
   EventType["KEY_UP"] = "keyUp";
@@ -1044,6 +1060,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   set x(x) {
+    console.log("坐标改变");
     this._position.x = x;
     this.updateWorldPosition();
   }
@@ -1444,6 +1461,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
     this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
     this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+    if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
     this.updateChildren();
   }
 
@@ -1451,6 +1469,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     this.position.x = this.parent ? this.worldPosition.x - this.parent.worldPosition.x : this.worldX;
     this.position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldY;
     this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+    if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
     this.updateChildren();
   }
 
@@ -1561,14 +1580,6 @@ export let Entity = rClass(_class21 = (_temp10 = _class22 = class Entity extends
     this.type = "entity";
     this.world = null;
   }
-
-  keyDown(key) {}
-
-  keyUp(key) {}
-
-  mouseDown() {}
-
-  mouseUp() {}
 
   onDestroy() {}
 
@@ -1900,6 +1911,14 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
     this.eventSystem.keyUp(key);
   }
   /**
+   * 按键按住事件
+   */
+
+
+  keyPress(key) {
+    this.eventSystem.keyPress(key);
+  }
+  /**
    * 鼠标按下事件
    */
 
@@ -1908,12 +1927,28 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
     this.eventSystem.mouseDown();
   }
   /**
+   * 鼠标按住事件
+   */
+
+
+  mousePress(event) {
+    this.eventSystem.mousePress(event);
+  }
+  /**
    * 鼠标抬起事件
    */
 
 
   mouseUp() {
     this.eventSystem.mouseUp();
+  }
+  /**
+   * 鼠标出屏事件
+   */
+
+
+  mouseOut() {
+    this.eventSystem.mouseOut();
   }
   /**
    * 按键按下事件，无需手动调用

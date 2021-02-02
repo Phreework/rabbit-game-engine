@@ -374,9 +374,14 @@ export class Rabbit {
     }
 
     /**
+     * 鼠标是否按下
+     */
+    isMouseDown: boolean = false;
+    /**
      * 鼠标下键按下
      */
     mouseDown(): void {
+        this.isMouseDown = true;
         this.world.mouseDown();
         this.mouse.pressed = true;
     }
@@ -385,6 +390,7 @@ export class Rabbit {
      * @param event
      */
     mouseUp(): void {
+        this.isMouseDown = false;
         this.world.mouseUp();
         this.mouse.pressed = true;
     }
@@ -392,10 +398,12 @@ export class Rabbit {
      * 鼠标移动
      * @param event 
      */
-    mouseMove(event: Event): void {
+    mousePress(event: Event): void {
+        if (!this.isMouseDown) return;
         var mousePos = Rabbit.Instance._mousePosition(event);
         this.mouse.x = mousePos[0];
         this.mouse.y = mousePos[1];
+        this.world.mousePress({ x: mousePos[0], y: mousePos[1] });
     }
 
     /**
@@ -403,6 +411,7 @@ export class Rabbit {
      * @param event 
      */
     mouseOut(event: Event): void {
+        this.isMouseDown = false;
         this.mouse.x = undefined;
         this.mouse.y = undefined;
     }
@@ -609,7 +618,7 @@ export class EventSystem {
         Rabbit.Instance.htmlCanvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e); };
         document.onkeydown = (e) => { Rabbit.Instance.keyDown(e); };
         document.onkeyup = (e) => { Rabbit.Instance.keyUp(e); };
-        Rabbit.Instance.htmlCanvas.onmousemove = (e) => { Rabbit.Instance.mouseMove(e); };
+        Rabbit.Instance.htmlCanvas.onmousemove = (e) => { Rabbit.Instance.mousePress(e); };
         Rabbit.Instance.htmlCanvas.onmouseup = (e) => { Rabbit.Instance.mouseUp(); };
         Rabbit.Instance.htmlCanvas.onmouseout = (e) => { Rabbit.Instance.mouseOut(e); };
     }
@@ -647,30 +656,31 @@ export class EventSystem {
     }
 
     keyDown(key: number) {
-        const entities = Rabbit.Instance.world.entities;
-        for (let i = entities.length - 1; i >= 0; --i) {
-            if (entities[i]) entities[i].keyDown(key);
-        }
+        this.sendMessage(new EventDisPatcher("keyDown", key));
+    }
+
+    keyPress(key: number) {
+        this.sendMessage(new EventDisPatcher("keyPress", key));
     }
 
     keyUp(key: number) {
-        const entities = Rabbit.Instance.world.entities;
-        for (let i = entities.length - 1; i >= 0; --i) {
-            if (entities[i]) entities[i].keyUp(key);
-        }
+        this.sendMessage(new EventDisPatcher("keyUp", key));
     }
 
     mouseDown() {
-        const entities = Rabbit.Instance.world.entities;
-        for (let i = entities.length - 1; i >= 0; --i) {
-            if (entities[i]) entities[i].mouseDown();
-        }
+        this.sendMessage(new EventDisPatcher("mouseDown"));
     }
+
+    mousePress(event) {
+        this.sendMessage(new EventDisPatcher("mousePress", event));
+    }
+
     mouseUp() {
-        const entities = Rabbit.Instance.world.entities;
-        for (let i = entities.length - 1; i >= 0; --i) {
-            if (entities[i]) entities[i].mouseUp();
-        }
+        this.sendMessage(new EventDisPatcher("mouseUp"));
+    }
+
+    mouseOut() {
+        this.sendMessage(new EventDisPatcher("mouseOut"));
     }
 
     removeListener(event: string, func?: Function, bind?: Object) {
@@ -696,6 +706,7 @@ export class EventSystem {
             EngineTools.deleteItemFromList(item, listeners);
         });
     }
+
     addListener(listener: EventListener) {
         Rabbit.Instance.world.eventListeners.push(listener);
     }
@@ -704,7 +715,7 @@ export class EventSystem {
         const listeners = Rabbit.Instance.world.eventListeners;
         const deleteListeners: EventListener[] = [];
         for (let i = listeners.length - 1; i >= 0; --i) {
-            const listener = listeners[i];
+            const listener: EventListener = listeners[i];
             const isEmit: boolean = listener.checkEmit(dispatcher);
             if (isEmit && listener.isOnce) {
                 deleteListeners.push(listener);
@@ -731,8 +742,12 @@ export class EventListener {
         this.isOnce = isonce;
     }
     checkEmit(dispatcher: EventDisPatcher): boolean {
+        if (!this.entity || !this.entity.active || !this.func) return;
         if (dispatcher.eventType == this.eventType) {
-            this.func.apply(this.bind, ...dispatcher.args);
+            if (this.eventType==EventType.POSITION_CHANGED && dispatcher.args[0]!=this.entity){
+                return false;
+            }
+            this.func.apply(this.bind, dispatcher.args);
             return true;
         }
         return false;
@@ -750,10 +765,11 @@ export enum EventType {
     MOUSE_DOWN = "mouseDown",
     MOUSE_UP = "mouseUp",
     MOUSE_PRESS = "mousePress",
+    MOUSE_OUT = "mouseOut",
     KEY_DOWN = "keyDown",
     KEY_PRESS = "keyPress",
     KEY_UP = "keyUp",
-    POSITION_CHANGED="positionChanged"
+    POSITION_CHANGED = "positionChanged"
 }
 @rClass
 export class RabObject {
@@ -1063,6 +1079,7 @@ export class Transform extends Component {
      * @set 设置本地坐标下x的值
      */
     set x(x: number) {
+        console.log("坐标改变");
         this._position.x = x;
         this.updateWorldPosition();
     }
@@ -1440,12 +1457,14 @@ export class Transform extends Component {
         this.worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
         this.worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
         this.worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+        if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
         this.updateChildren();
     }
     updateLocalPosition() {
         this.position.x = this.parent ? (this.worldPosition.x - this.parent.worldPosition.x) : this.worldX;
         this.position.y = this.parent ? (this.worldPosition.y - this.parent.worldPosition.y) : this.worldY;
         this.position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
+        if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
         this.updateChildren();
     }
 
@@ -1560,12 +1579,6 @@ export class Entity extends RabObject {
         this.world = null;
     }
 
-    keyDown(key: number) { };
-
-    keyUp(key: number) { };
-
-    mouseDown() { };
-    mouseUp() { };
     onDestroy() { };
 
     onAdd() {
@@ -1706,10 +1719,10 @@ export class Entity extends RabObject {
         }
     }
 
-    listen(event: EventType | string, func: Function, bind: Object) {
+    listen(event: EventType | string, func: Function, bind?: Object) {
         Rabbit.Instance.eventSystem.addListener(new EventListener(event, func, bind, this, false));
     }
-    listenOnce(event: EventType | string, func: Function, bind: Object) {
+    listenOnce(event: EventType | string, func: Function, bind?: Object) {
         Rabbit.Instance.eventSystem.addListener(new EventListener(event, func, bind, this, true));
     }
     listenOff(event: EventType | string, func?: Function, bind?: Object) {
@@ -1874,7 +1887,12 @@ export class World extends RabObject {
     keyUp(key: number) {
         this.eventSystem.keyUp(key);
     }
-
+    /**
+     * 按键按住事件
+     */
+    keyPress(key: number) {
+        this.eventSystem.keyPress(key);
+    }
     /**
      * 鼠标按下事件
      */
@@ -1882,10 +1900,22 @@ export class World extends RabObject {
         this.eventSystem.mouseDown();
     }
     /**
+     * 鼠标按住事件
+     */
+    mousePress(event) {
+        this.eventSystem.mousePress(event);
+    }
+    /**
      * 鼠标抬起事件
      */
     mouseUp() {
         this.eventSystem.mouseUp();
+    }
+    /**
+     * 鼠标出屏事件
+     */
+    mouseOut() {
+        this.eventSystem.mouseOut();
     }
     /**
      * 按键按下事件，无需手动调用

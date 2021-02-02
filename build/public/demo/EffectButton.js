@@ -1,4 +1,4 @@
-import { AudioSystem, Entity, Rabbit, RabImage, World } from "../ts/Core.js";
+import { AudioSystem, Entity, EventType, Rabbit, RabImage, World } from "../ts/Core.js";
 export function main() {
   const world = new World("demo2");
 
@@ -12,16 +12,14 @@ export function main() {
       entity.transform.width = image.w;
       entity.transform.height = image.h;
     });
-
-    entity.mouseDown = () => {
+    entity.listen(EventType.MOUSE_DOWN, () => {
       const rect = entity.transform.getRect();
 
       if (rect.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y])) {
         AudioSystem.play("audio/bell.ogg");
         console.log("play");
       }
-    };
-
+    });
     world.add(entity);
   };
 

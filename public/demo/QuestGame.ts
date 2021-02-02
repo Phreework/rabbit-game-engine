@@ -17,7 +17,7 @@ export function main() {
         const entity = new Entity();
         const robot = entity.addComponent(Robot);
         robot.init(240, 240);
-        entity.keyDown = (key) => {
+        entity.listen(Entity.EventType.KEY_DOWN, (key) => {
             console.log("key", key);
             switch (key) {
                 case KeyType.A: entity.transform.x -= 16; break;
@@ -26,7 +26,7 @@ export function main() {
                 case KeyType.S: entity.transform.y += 16; break;
                 default: break;
             }
-        }
+        },this);
         world.add(entity);
     };
     return world;
