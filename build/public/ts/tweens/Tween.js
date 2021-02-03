@@ -8,14 +8,27 @@
  */
 import Easing from './Easing.js';
 import Interpolation from './Interpolation.js';
-import { mainGroup } from './mainGroup.js';
-import Sequence from './Sequence.js';
-import now from './Now.js';
+import { Rabbit } from '../Core.js';
+export class TweenSequence {
+  static nextId() {
+    return TweenSequence._nextId++;
+  }
+
+}
+TweenSequence._nextId = 0;
+
+let now = () => {
+  return Rabbit.Instance.time;
+};
+
 export class Tween {
-  // eslint-disable-next-line
-  constructor(_object, _group = mainGroup) {
+  get startTime() {
+    return this._startTime;
+  }
+
+  // constructor(private _object: T, private _group: Group | false = mainGroup) {}
+  constructor(_object) {
     this._object = _object;
-    this._group = _group;
     this._isPaused = false;
     this._pauseStart = 0;
     this._valuesStart = {};
@@ -39,7 +52,7 @@ export class Tween {
     this._onRepeatCallback = void 0;
     this._onCompleteCallback = void 0;
     this._onStopCallback = void 0;
-    this._id = Sequence.nextId();
+    this._id = TweenSequence.nextId();
     this._isChainStopped = false;
     this._goToEnd = false;
   }
@@ -64,7 +77,23 @@ export class Tween {
     this._valuesEnd = Object.create(properties);
 
     if (duration !== undefined) {
-      this._duration = duration;
+      this._duration = duration * 1000;
+    }
+
+    return this;
+  }
+
+  by(properties, duration) {
+    this._valuesEnd = Object.create(properties);
+
+    for (const str in properties) {
+      console.log("valuesend", this._valuesEnd);
+      console.log("properties", properties);
+      this._valuesEnd[str] = this._object[str] + properties[str];
+    }
+
+    if (duration !== undefined) {
+      this._duration = duration * 1000;
     }
 
     return this;
@@ -75,13 +104,12 @@ export class Tween {
     return this;
   }
 
-  start(time) {
+  start() {
     if (this._isPlaying) {
       return this;
     } // eslint-disable-next-line
 
 
-    this._group && this._group.add(this);
     this._repeat = this._initialRepeat;
 
     if (this._reversed) {
@@ -100,11 +128,12 @@ export class Tween {
     this._isPaused = false;
     this._onStartCallbackFired = false;
     this._isChainStopped = false;
-    this._startTime = time !== undefined ? typeof time === 'string' ? now() + parseFloat(time) : time : now();
+    this._startTime = now();
     this._startTime += this._delayTime;
 
     this._setupProperties(this._object, this._valuesStart, this._valuesEnd, this._valuesStartRepeat);
 
+    Rabbit.Instance.world.tweenSystem.addTween(this);
     return this;
   }
 
@@ -181,9 +210,9 @@ export class Tween {
     if (!this._isPlaying) {
       return this;
     } // eslint-disable-next-line
+    // this._group && this._group.remove(this as any)
 
 
-    this._group && this._group.remove(this);
     this._isPlaying = false;
     this._isPaused = false;
 
@@ -207,8 +236,8 @@ export class Tween {
 
     this._isPaused = true;
     this._pauseStart = time; // eslint-disable-next-line
+    // this._group && this._group.remove(this as any)
 
-    this._group && this._group.remove(this);
     return this;
   }
 
@@ -220,8 +249,8 @@ export class Tween {
     this._isPaused = false;
     this._startTime += time - this._pauseStart;
     this._pauseStart = 0; // eslint-disable-next-line
+    // this._group && this._group.add(this as any)
 
-    this._group && this._group.add(this);
     return this;
   }
 
@@ -231,12 +260,11 @@ export class Tween {
     }
 
     return this;
-  }
+  } // group(group = mainGroup): this {
+  // 	this._group = group
+  // 	return this
+  // }
 
-  group(group = mainGroup) {
-    this._group = group;
-    return this;
-  }
 
   delay(amount = 0) {
     this._delayTime = amount;
@@ -305,7 +333,7 @@ export class Tween {
    * otherwise (calling update on a paused tween still returns true because
    * it is still playing, just paused).
    */
-  update(time = now(), autoStart = true) {
+  update(time = now()) {
     if (this._isPaused) return true;
     let property;
     let elapsed;
@@ -313,7 +341,6 @@ export class Tween {
 
     if (!this._goToEnd && !this._isPlaying) {
       if (time > endTime) return false;
-      if (autoStart) this.start(time);
     }
 
     this._goToEnd = false;
@@ -386,7 +413,7 @@ export class Tween {
         for (let i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
           // Make the chained tweens start exactly at the time they should,
           // even if the `update()` method was called way past the duration of the tween
-          this._chainedTweens[i].start(this._startTime + this._duration);
+          this._chainedTweens[i].start();
         }
 
         this._isPlaying = false;

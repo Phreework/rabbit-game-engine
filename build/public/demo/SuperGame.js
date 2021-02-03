@@ -1,5 +1,5 @@
-import { Color, Component, Entity, Rabbit, Text, Vec2, Vec3 } from "../ts/Core";
-import Tween from "../ts/tweens/Tween";
+import { Color, Component, Entity, Rabbit, Text, TextAlignType, Vec3 } from "../ts/Core.js";
+import Tween from "../ts/tweens/Tween.js";
 const playerModel = "                                 __                                 " + "\n" + "                          ______/||\______                          " + "\n" + "                         |______||||______|                         " + "\n" + "                         |      ||||      |                         " + "\n" + "                         '---___ || ___---'                         " + "\n" + "                               | || |                               " + "\n" + "                               |    |                               " + "\n" + "                               | . .|                               " + "\n" + "                               |  . |                               " + "\n" + "                  _______     _|    |_     _______                  " + "\n" + "  _______________|_______|..-~:| . .|:~-..|_______|_______________  " + "\n" + " /________________:  .        :| .  |:       .   :________________\ " + "\n" + " |:    .       .     .        :| .  |:       .         .     .   :| " + "\n" + " |:    . . . . .  .  .  .     :|. . |:    .  .  .      . . . .   :| " + "\n" + " |:    .       .  ________    :|    |:    ________     .     .   :| " + "\n" + " \_______________/________\____|    |____/________\______________/  " + "\n" + "                 |__|__|__|    |.  .|    |__|__|__|                 " + "\n" + "                  \/ \/ \/     |.  .|     \/ \/ \/                  " + "\n" + "                               | __ |                               " + "\n" + "                               |/__\|                               " + "\n" + "                               ||__||                               " + "\n" + "                               |\__/|                               " + "\n" + "                               |    |                               " + "\n" + "                               \____/                               " + "\n" + "                                \|||                                " + "\n" + "                                \||/                                " + "\n" + "                                 ~~                                 " + "\n" + "                                                                    ";
 const enemyModel = "                                          __                                          " + "\n" + "                                ________ /||\_________                                " + "\n" + "                               |________:||||:________|                               " + "\n" + "                               |        :||||:        |                               " + "\n" + "                               '---..___| || |___..---'                               " + "\n" + "                                       |  ||  |                                       " + "\n" + "                                       |      |                                       " + "\n" + "                                       |      |                                       " + "\n" + "                                       |   .  |                                       " + "\n" + "                                       |   .  |                                       " + "\n" + "                                       |   .  |                                       " + "\n" + "                                       |. . . |                                       " + "\n" + "                                       |   .  |                                       " + "\n" + "                        _______       _|      |_       _______                        " + "\n" + "  _____________________|_______|..--~~:|. . . |:~~--..|_______|_____________________  " + "\n" + " /______________________:  .          :|  .   |:         .   :______________________\ " + "\n" + " |:    .         .         .          :|  .   |:         .             .       .   :| " + "\n" + " |:    . . . . . .      .  .  .       :| . . .|:      .  .  .          . . . . .   :| " + "\n" + " |:    .         .      ________      :|      |:      ________         .       .   :| " + "\n" + " \_____________________/________\______|      |______/________\____________________/  " + "\n" + "                       |__|__|__|      |..  ..|      |__|__|__|                       " + "\n" + "                        \/ \/ \/       |..  ..|       \/ \/ \/                        " + "\n" + "                                       |      |                                       " + "\n" + "                                       |. . . |                                       " + "\n" + "                                       |  __  |                                       " + "\n" + "                                       | /__\ |                                       " + "\n" + "                                       | |__| |                                       " + "\n" + "                                       | |__| |                                       " + "\n" + "                                       | |__| |                                       " + "\n" + "                                       | \__/ |                                       " + "\n" + "                                       |:    :|                                       " + "\n" + "                                       \______/                                       " + "\n" + "                                        \\|||/                                        " + "\n" + "                                         \||/                                         " + "\n" + "                                          ~~                                          " + "\n" + "                                                                                      ";
 const bulletModel = "/\\";
@@ -30,7 +30,7 @@ export default class SuperGame {
   }
 
   BulletShoot() {
-    const tween = new Tween(this.player).delay(0.3).call(() => {
+    const tween = new Tween(this.player).delay(0.3).onComplete(() => {
       this.shootOneBullet();
       tween.start();
     }).start();
@@ -53,7 +53,7 @@ export default class SuperGame {
   initEnemy() {
     const enemy = this.getAscIIModel(enemyModel);
     this.root.addChild(enemy);
-    enemy.transform.setPosition(0, 320); // console.log("enemy大小",enemy.getContentSize());
+    enemy.transform.setPosition(0, -320); // console.log("enemy大小",enemy.getContentSize());
 
     let hp = 10;
     const hpNode = new Entity();
@@ -63,6 +63,7 @@ export default class SuperGame {
     hpLab.lineHeight = 40;
     hpNode.transform.color = Color.BLACK;
     hpLab.text = 'HP:----------';
+    hpLab.align = TextAlignType.center;
     hpNode.transform.setPosition(0, enemy.transform.height / 2 + 50);
     const collider = enemy.addComponent(SuperBoxCollider);
     collider.group = "enemy";
@@ -84,9 +85,12 @@ export default class SuperGame {
 
   initPlayer() {
     const player = this.getAscIIModel(playerModel);
-    player.transform.scaleY = -1;
+    console.log("player初始化");
     this.root.addChild(player);
-    player.transform.setPosition(0, -350);
+    player.transform.scaleY = -1;
+    console.log("root", this.root);
+    player.transform.setPosition(0, 350);
+    console.log("player设置坐标后", player.transform.getRect());
     const playerTouchCtl = new TouchController(player);
 
     playerTouchCtl.startEvent = () => {
@@ -109,9 +113,9 @@ export default class SuperGame {
     const bulletStartPos = new Vec3(this.player.transform.x, this.player.transform.top);
     bullet.transform.setPosition(bulletStartPos);
     const bulletFlyTween = new Tween(bullet);
-    bulletFlyTween.target(bullet).by(1, {
+    bulletFlyTween.by({
       y: 300
-    }).call(() => {
+    }, 1).onComplete(() => {
       if (bullet.transform.y >= this.BOUND_UP + bullet.transform.height * 2) {
         bullet.destroy();
         console.log("bullet销毁");
@@ -137,11 +141,7 @@ export default class SuperGame {
   }
 
   setRoot() {
-    this.root = new Entity();
-    this.canvas.entity.addChild(this.root);
-    this.root.transform.setPosition(new Vec2(0, 0));
-    this.root.transform.width = this.canvas.resolution.width;
-    this.root.transform.height = this.canvas.resolution.height;
+    this.root = this.canvas.entity;
     this.BOUND_WIDTH = this.root.transform.width;
     this.BOUND_HEIGHT = this.root.transform.height;
     this.BOUND_LEFT = this.root.transform.left;
@@ -170,6 +170,7 @@ export default class SuperGame {
     // labelOutline.width = 2;
     // console.log(label.string);
 
+    console.log("模型" + flyNode.transform.entity.name, flyNode.transform.getRect());
     return flyNode;
   }
 
@@ -228,7 +229,7 @@ export class TouchController {
 
   finishUserMove() {
     // sub 向量减法，并返回新结果。
-    let vec = this.movePoint.sub(this.startPoint);
+    const vec = this.movePoint.sub(this.startPoint);
     this.moveEvent(vec); // 设置长度才去执行响应
     // 计算两点之间的向量及其模长：cc.pSub(p1, p2) 从 v2.0 开始被废弃，目前最新的替代方法是：p1.sub(p2)；
     // 2，两个点的距离计算：cc.pLength(p)

@@ -36,9 +36,9 @@ class Light extends Component {
   }
 
   onLoad() {
-    this.entity.listen(EventType.MOUSE_DOWN, () => {
-      console.log("点击棋子");
-      if (this.circle.collidePoint([Rabbit.Instance.mouse.x, Rabbit.Instance.mouse.y])) this.board.light(this.gx, this.gy);
+    this.entity.listen(EventType.MOUSE_DOWN, event => {
+      // console.log("点击棋子");
+      if (this.circle.collidePoint([event.x, event.y])) this.board.light(this.gx, this.gy);
     });
   }
 

@@ -9,14 +9,17 @@
 
 import Easing from './Easing.js'
 import Interpolation from './Interpolation.js'
-import {mainGroup} from './mainGroup.js'
-import Sequence from './Sequence.js'
-import now from './Now.js'
+import type { EasingFunction } from './Easing.js'
+import type { InterpolationFunction } from './Interpolation.js'
+import { Rabbit } from '../Core.js'
+export class TweenSequence {
+	private static _nextId = 0
 
-import type {EasingFunction} from './Easing.js'
-import type {InterpolationFunction} from './Interpolation.js'
-import type Group from './Group.js'
-
+	static nextId(): number {
+		return TweenSequence._nextId++
+	}
+}
+let now = () => { return Rabbit.Instance.time };
 export class Tween<T extends UnknownProps> {
 	private _isPaused = false
 	private _pauseStart = 0
@@ -32,6 +35,9 @@ export class Tween<T extends UnknownProps> {
 	private _reversed = false
 	private _delayTime = 0
 	private _startTime = 0
+	get startTime() {
+		return this._startTime;
+	}
 	private _easingFunction: EasingFunction = Easing.Linear.None
 	private _interpolationFunction: InterpolationFunction = Interpolation.Linear
 	// eslint-disable-next-line
@@ -42,10 +48,13 @@ export class Tween<T extends UnknownProps> {
 	private _onRepeatCallback?: (object: T) => void
 	private _onCompleteCallback?: (object: T) => void
 	private _onStopCallback?: (object: T) => void
-	private _id = Sequence.nextId()
+	private _id = TweenSequence.nextId()
 	private _isChainStopped = false
 
-	constructor(private _object: T, private _group: Group | false = mainGroup) {}
+	// constructor(private _object: T, private _group: Group | false = mainGroup) {}
+	constructor(private _object: T) {
+		
+	}
 
 	getId(): number {
 		return this._id
@@ -67,7 +76,21 @@ export class Tween<T extends UnknownProps> {
 		this._valuesEnd = Object.create(properties)
 
 		if (duration !== undefined) {
-			this._duration = duration
+			this._duration = duration*1000
+		}
+
+		return this
+	}
+
+	by(properties: UnknownProps, duration?: number): this {
+		this._valuesEnd = Object.create(properties)
+		for (const str in properties) {
+			console.log("valuesend", this._valuesEnd);
+			console.log("properties", properties);
+			this._valuesEnd[str] = this._object[str] + properties[str];
+		}
+		if (duration !== undefined) {
+			this._duration = duration*1000
 		}
 
 		return this
@@ -78,13 +101,12 @@ export class Tween<T extends UnknownProps> {
 		return this
 	}
 
-	start(time?: number): this {
+	start(): this {
 		if (this._isPlaying) {
 			return this
 		}
 
 		// eslint-disable-next-line
-		this._group && this._group.add(this as any)
 
 		this._repeat = this._initialRepeat
 
@@ -108,11 +130,11 @@ export class Tween<T extends UnknownProps> {
 
 		this._isChainStopped = false
 
-		this._startTime = time !== undefined ? (typeof time === 'string' ? now() + parseFloat(time) : time) : now()
+		this._startTime = now()
 		this._startTime += this._delayTime
 
 		this._setupProperties(this._object, this._valuesStart, this._valuesEnd, this._valuesStartRepeat)
-
+		Rabbit.Instance.world.tweenSystem.addTween(this);
 		return this
 	}
 
@@ -199,7 +221,7 @@ export class Tween<T extends UnknownProps> {
 		}
 
 		// eslint-disable-next-line
-		this._group && this._group.remove(this as any)
+		// this._group && this._group.remove(this as any)
 
 		this._isPlaying = false
 
@@ -228,7 +250,7 @@ export class Tween<T extends UnknownProps> {
 		this._pauseStart = time
 
 		// eslint-disable-next-line
-		this._group && this._group.remove(this as any)
+		// this._group && this._group.remove(this as any)
 
 		return this
 	}
@@ -245,7 +267,7 @@ export class Tween<T extends UnknownProps> {
 		this._pauseStart = 0
 
 		// eslint-disable-next-line
-		this._group && this._group.add(this as any)
+		// this._group && this._group.add(this as any)
 
 		return this
 	}
@@ -257,10 +279,10 @@ export class Tween<T extends UnknownProps> {
 		return this
 	}
 
-	group(group = mainGroup): this {
-		this._group = group
-		return this
-	}
+	// group(group = mainGroup): this {
+	// 	this._group = group
+	// 	return this
+	// }
 
 	delay(amount = 0): this {
 		this._delayTime = amount
@@ -331,7 +353,7 @@ export class Tween<T extends UnknownProps> {
 	 * otherwise (calling update on a paused tween still returns true because
 	 * it is still playing, just paused).
 	 */
-	update(time = now(), autoStart = true): boolean {
+	update(time = now()): boolean {
 		if (this._isPaused) return true
 
 		let property
@@ -340,8 +362,7 @@ export class Tween<T extends UnknownProps> {
 		const endTime = this._startTime + this._duration
 
 		if (!this._goToEnd && !this._isPlaying) {
-			if (time > endTime) return false
-			if (autoStart) this.start(time)
+			if (time > endTime) return false;
 		}
 
 		this._goToEnd = false
@@ -415,7 +436,7 @@ export class Tween<T extends UnknownProps> {
 				for (let i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
 					// Make the chained tweens start exactly at the time they should,
 					// even if the `update()` method was called way past the duration of the tween
-					this._chainedTweens[i].start(this._startTime + this._duration)
+					this._chainedTweens[i].start()
 				}
 
 				this._isPlaying = false

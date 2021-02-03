@@ -15,6 +15,7 @@
 
 import { rClass } from "../ts/Decorator.js";
 import { Debug } from "./Debug.js";
+import Tween from "./tweens/Tween.js";
 
 /**
  * 记录了所有Engine Class的map
@@ -78,7 +79,17 @@ export enum KeyType {
 
     SPACE = 32
 }
-
+export class RabbitMouseEvent {
+    constructor(e: MouseEvent) {
+        this.x = e.x;
+        this.y = e.y;
+    }
+    x: number;
+    y: number;
+    getLocation() {
+        return new Vec2(this.x, this.y);
+    }
+}
 /**
  * ###en
  * 
@@ -92,6 +103,7 @@ export class Rabbit {
      * Rabbit运行环境唯一实例
      */
     public static Instance: Rabbit = null;
+
 
     /**
      * 返回Canvas的矩形框
@@ -169,7 +181,10 @@ export class Rabbit {
      * 记录每帧时间点
      */
     time: number = undefined;
-
+    /**
+     * 记录游戏进行了多少帧
+     */
+    frameCacul: number = 0;
     /**
      * @deprecated
      * 记录即将切换的场景
@@ -213,6 +228,10 @@ export class Rabbit {
     eventSystem: EventSystem;
 
     /**
+     * Tween处理系统类
+     */
+    tweenSystem: TweenSystem;
+    /**
      * Rabbit运行环境构造器函数
      */
     constructor() {
@@ -222,6 +241,7 @@ export class Rabbit {
         this.entitySystem = new EntitySystem();
         this.compSystem = new CompSystem();
         this.eventSystem = new EventSystem();
+        this.tweenSystem = new TweenSystem();
     }
 
     /**
@@ -348,9 +368,9 @@ export class Rabbit {
      * 鼠标按下
      * @param event 事件
      */
-    _canvasMouseDown(event: Event): void {
+    _canvasMouseDown(event: MouseEvent): void {
         event.preventDefault();
-        this.mouseDown();
+        this.mouseDown(event);
     }
 
     /**
@@ -380,37 +400,37 @@ export class Rabbit {
     /**
      * 鼠标下键按下
      */
-    mouseDown(): void {
+    mouseDown(e: MouseEvent): void {
         this.isMouseDown = true;
-        this.world.mouseDown();
+        this.world.mouseDown(e);
         this.mouse.pressed = true;
     }
     /**
      * 鼠标下键按下
      * @param event
      */
-    mouseUp(): void {
+    mouseUp(e: MouseEvent): void {
         this.isMouseDown = false;
-        this.world.mouseUp();
+        this.world.mouseUp(e);
         this.mouse.pressed = true;
     }
     /**
      * 鼠标移动
      * @param event 
      */
-    mousePress(event: Event): void {
+    mousePress(event: MouseEvent): void {
         if (!this.isMouseDown) return;
         var mousePos = Rabbit.Instance._mousePosition(event);
         this.mouse.x = mousePos[0];
         this.mouse.y = mousePos[1];
-        this.world.mousePress({ x: mousePos[0], y: mousePos[1] });
+        this.world.mousePress(event);
     }
 
     /**
      * 鼠标出绘制屏幕
      * @param event 
      */
-    mouseOut(event: Event): void {
+    mouseOut(event: MouseEvent): void {
         this.isMouseDown = false;
         this.mouse.x = undefined;
         this.mouse.y = undefined;
@@ -505,6 +525,7 @@ export class Rabbit {
         let dtime: number = (Date.now() - this.time) / 1000;
         if (dtime > this.maxFrameTime) dtime = this.maxFrameTime;
         this.time = Date.now();
+        this.frameCacul++;
         this.world.update(dtime);
         this.context.clearRect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
         this.world.draw();
@@ -619,7 +640,7 @@ export class EventSystem {
         document.onkeydown = (e) => { Rabbit.Instance.keyDown(e); };
         document.onkeyup = (e) => { Rabbit.Instance.keyUp(e); };
         Rabbit.Instance.htmlCanvas.onmousemove = (e) => { Rabbit.Instance.mousePress(e); };
-        Rabbit.Instance.htmlCanvas.onmouseup = (e) => { Rabbit.Instance.mouseUp(); };
+        Rabbit.Instance.htmlCanvas.onmouseup = (e) => { Rabbit.Instance.mouseUp(e); };
         Rabbit.Instance.htmlCanvas.onmouseout = (e) => { Rabbit.Instance.mouseOut(e); };
     }
 
@@ -667,20 +688,21 @@ export class EventSystem {
         this.sendMessage(new EventDisPatcher("keyUp", key));
     }
 
-    mouseDown() {
-        this.sendMessage(new EventDisPatcher("mouseDown"));
+    mouseDown(event: RabbitMouseEvent) {
+        console.log("mouseEvent",event);
+        this.sendMessage(new EventDisPatcher("mouseDown", event));
     }
 
-    mousePress(event) {
+    mousePress(event: RabbitMouseEvent) {
         this.sendMessage(new EventDisPatcher("mousePress", event));
     }
 
-    mouseUp() {
-        this.sendMessage(new EventDisPatcher("mouseUp"));
+    mouseUp(event: RabbitMouseEvent) {
+        this.sendMessage(new EventDisPatcher("mouseUp", event));
     }
 
-    mouseOut() {
-        this.sendMessage(new EventDisPatcher("mouseOut"));
+    mouseOut(event: RabbitMouseEvent) {
+        this.sendMessage(new EventDisPatcher("mouseOut", event));
     }
 
     removeListener(event: string, func?: Function, bind?: Object) {
@@ -727,6 +749,28 @@ export class EventSystem {
     }
 
 }
+export class TweenSystem {
+    update(dtime: number) {
+        const tweens = Rabbit.Instance.world.tweens;
+        const deleteTweens: Tween<any>[] = [];
+        for (let i = tweens.length - 1; i >= 0; --i) {
+            const tween: Tween<any> = tweens[i];
+            if (tween.isPlaying()) tween.update(Rabbit.Instance.time);
+            else deleteTweens.push(tween);
+        }
+        deleteTweens.forEach((item) => {
+            EngineTools.deleteItemFromList(item, tweens);
+        });
+    }
+    addTween(tween: Tween<any>) {
+        Rabbit.Instance.world.tweens.push(tween);
+    }
+    static Instance: TweenSystem;
+
+    constructor() {
+        TweenSystem.Instance = this;
+    }
+}
 export class EventListener {
 
     entity: Entity;
@@ -746,6 +790,15 @@ export class EventListener {
         if (dispatcher.eventType == this.eventType) {
             if (this.eventType == EventType.POSITION_CHANGED && dispatcher.args[0] != this.entity) {
                 return false;
+            }
+            if (this.eventType == EventType.MOUSE_DOWN) {
+                if (this.entity.transform.getRect().collidePoint([(dispatcher.args[0] as MouseEvent).x, (dispatcher.args[0] as MouseEvent).y])) {
+                    console.log("点击成功");
+                    return true;
+                } else {
+                    console.log("点击失败");
+                    return false;
+                }
             }
             this.func.apply(this.bind, dispatcher.args);
             return true;
@@ -884,6 +937,9 @@ export class Vec2 {
         this.x = x ? x : 0;
         this.y = y ? y : 0;
     }
+    sub(other: Vec2) {
+        return new Vec2(this.x - other.x, this.y - other.y);
+    }
 }
 @rClass
 export class Vec3 {
@@ -937,39 +993,39 @@ export class Transform extends Component {
     /**
      * 世界坐标
      */
-    _worldPosition: Vec3 = new Vec3();
+    private _worldPosition: Vec3 = new Vec3();
     /**
      * 本地坐标
      */
-    _position: Vec3 = new Vec3();
+    private _position: Vec3 = new Vec3();
     /**
      * 世界坐标系角度
      */
-    _worldAngle: number = 0;
+    private _worldAngle: number = 0;
     /**
      * 本地坐标系角度
      */
-    _angle: number = 0;
+    private _angle: number = 0;
     /**
      * 2d模式锚点
      */
-    _anchor: Vec2 = new Vec2(0.5, 0.5);
+    private _anchor: Vec2 = new Vec2(0.5, 0.5);
     /**
      * @description 本地缩放尺寸
      */
-    _scale: Vec2 = new Vec2(1, 1);
+    private _scale: Vec2 = new Vec2(1, 1);
     /**
      * @description 世界缩放尺寸
      */
-    _worldScale: Vec2 = new Vec2(1, 1);
+    private _worldScale: Vec2 = new Vec2(1, 1);
     /**
      * 颜色
      */
-    _color: Color = Color.BLACK;
+    private _color: Color = Color.BLACK;
     /**
      * 宽高对象
      */
-    _size: Vec2 = new Vec2(0, 0);
+    private _rect: Rect = new Rect(0, 0, 0, 0);
 
     constructor(x?: number, y?: number, width?: number, height?: number, scalex?: number, scaley?: number) {
         super();
@@ -1172,14 +1228,15 @@ export class Transform extends Component {
      * 返回宽高对象
      */
     get size(): Vec2 {
-        return this._size;
+        return new Vec2(this._rect.w, this._rect.h);
     }
 
     /**
      * 设置宽高对象
      */
     set size(size: Vec2) {
-        this._size = size;
+        this._rect.w = size.width;
+        this._rect.h = size.height;
         this.updateSize();
     }
 
@@ -1187,14 +1244,14 @@ export class Transform extends Component {
      * 返回width
      */
     get width(): number {
-        return this._size.width;
+        return this._rect.width;
     }
 
     /**
      * 设置width
      */
     set width(width: number) {
-        this._size.width = width;
+        this._rect.w = width;
         this.updateSize();
     }
 
@@ -1202,14 +1259,14 @@ export class Transform extends Component {
      * 返回height
      */
     get height(): number {
-        return this._size.height;
+        return this._rect.height;
     }
 
     /**
      * 设置height
      */
     set height(height: number) {
-        this._size.height = height;
+        this._rect.height = height;
         this.updateSize();
     }
 
@@ -1359,10 +1416,8 @@ export class Transform extends Component {
 
     }
 
-
-
     getRect(): Rect {
-        return new Rect(this.x, this.y, this.width, this.height);
+        return this._rect;
     }
 
     updateForParent() {
@@ -1456,6 +1511,7 @@ export class Transform extends Component {
             console.log(this.entity.name, this._worldPosition.x);
         }
         if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+        this.updateRect();
         this.updateChildren();
     }
     updateLocalPosition() {
@@ -1463,9 +1519,13 @@ export class Transform extends Component {
         this._position.y = this.parent ? (this.worldPosition.y - this.parent.worldPosition.y) : this.worldY;
         this._position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
         if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+        this.updateRect();
         this.updateChildren();
     }
-
+    updateRect() {
+        this._rect.x = this.worldPosition.x;
+        this._rect.y = this.worldPosition.y;
+    }
     static calcNewPoint(p: IVec2, pCenter: IVec2, angle: number): Vec2 {
         // calc arc 
         let l: number = ((angle * Math.PI) / 180);
@@ -1803,9 +1863,18 @@ export class World extends RabObject {
     eventSystem: EventSystem = Rabbit.Instance.eventSystem;
 
     /**
+     * 补间动画管理系统唯一实例
+     */
+    tweenSystem: TweenSystem = Rabbit.Instance.tweenSystem;
+    /**
      * 事件监听器集合
      */
     eventListeners: EventListener[] = [];
+
+    /**
+     * tween动画集合
+     */
+    tweens: Tween<any>[] = [];
     /**
      * 构造器函数，调用创建一个场景
      * @param name 游戏场景的名称
@@ -1894,32 +1963,37 @@ export class World extends RabObject {
     /**
      * 鼠标按下事件
      */
-    mouseDown() {
-        this.eventSystem.mouseDown();
+    mouseDown(event: MouseEvent) {
+        const mouseEvent = new RabbitMouseEvent(event);
+        this.eventSystem.mouseDown(mouseEvent);
     }
     /**
      * 鼠标按住事件
      */
-    mousePress(event) {
-        this.eventSystem.mousePress(event);
+    mousePress(event: MouseEvent) {
+        const mouseEvent = new RabbitMouseEvent(event);
+        this.eventSystem.mousePress(mouseEvent);
     }
     /**
      * 鼠标抬起事件
      */
-    mouseUp() {
-        this.eventSystem.mouseUp();
+    mouseUp(event: MouseEvent) {
+        const mouseEvent = new RabbitMouseEvent(event);
+        this.eventSystem.mouseUp(mouseEvent);
     }
     /**
      * 鼠标出屏事件
      */
-    mouseOut() {
-        this.eventSystem.mouseOut();
+    mouseOut(event: MouseEvent) {
+        const mouseEvent = new RabbitMouseEvent(event);
+        this.eventSystem.mouseOut(mouseEvent);
     }
     /**
      * 按键按下事件，无需手动调用
      */
     update(dtime: number) {
         this.eventSystem.update(dtime);
+        this.tweenSystem.update(dtime);
     }
 
     /**
@@ -1937,6 +2011,7 @@ export class World extends RabObject {
         this.entities = [];
         this.preDestroys = [];
         this.eventListeners = [];
+        this.tweens = [];
         this.maxId = 0;
     }
 
@@ -2108,7 +2183,14 @@ export class Color {
 @rClass
 export class Text extends GraphicComponent {
     static TextAlignType: typeof TextAlignType = TextAlignType;
-    text: string;
+    private _text: string;
+    get text() {
+        return this._text;
+    }
+    set text(value) {
+        this._text = value;
+        this.updateSize();
+    }
     font: string;
     colour: string;
     textSize: number;
@@ -2162,8 +2244,7 @@ export class Text extends GraphicComponent {
     draw() {
         Rabbit.Instance.context.save();
         const transform = this.entity.transform;
-        const value: number = transform.worldAngle * Math.PI / 180;
-        this.w = Rabbit.Instance.context.measureText(this.text).width;
+
         Rabbit.Instance.context.textBaseline = 'top';
         Rabbit.Instance.context.textAlign = this.align;
         Rabbit.Instance.context.font = this.textSize + "px " + this.font;
@@ -2171,8 +2252,10 @@ export class Text extends GraphicComponent {
 
 
         Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
-        // console.log("x,y", transform.worldX, transform.worldY)
+        // console.log("x,y", transform.worldX, transform.worldY)\
+        const value: number = transform.worldAngle * Math.PI / 180;
         Rabbit.Instance.context.rotate(value);
+        Rabbit.Instance.context.scale(transform.scaleX, transform.scaleY);
         Rabbit.Instance.context.translate(-transform.worldX, -transform.worldY);
 
 
@@ -2181,21 +2264,100 @@ export class Text extends GraphicComponent {
             Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
             const angleParent = transform.parent.worldAngle * Math.PI / 180;
             Rabbit.Instance.context.rotate(angleParent);
-
-            Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
+            this.renderText(this.text, transform.x, transform.y);
+            // Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
         } else {
             // console.log("scale2", transform.worldScale);
             Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
             Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
-            Rabbit.Instance.context.fillText(this.text, 0, 0);
+            // Rabbit.Instance.context.fillText(this.text, 0, 0);
+            this.renderText(this.text, 0, 0);
         }
 
         Rabbit.Instance.context.restore();
     }
 
+    renderText(origintext: string, x: number, y: number, isupdatesize?: boolean) {
+        const textArr: string[] = origintext.split("\n");
+        for (let i = 0; i < textArr.length; i++) {
+            const text: string = textArr[i];
+            Rabbit.Instance.context.fillText(text, x, y);
+            y += this.textSize;
+        }
+
+    }
+    updateSize() {
+        this.h = 0;
+        this.w = 0;
+        const textArr: string[] = this.text.split("\n");
+        for (let i = 0; i < textArr.length; i++) {
+            const text: string = textArr[i];
+            this.h += this.textSize;
+            const nowWidth = Rabbit.Instance.context.measureText(text).width;
+            this.w = nowWidth > this.w ? nowWidth : this.w;
+        }
+        if (this.entity) {
+            this.entity.transform.size = new Vec2(this.w, this.h);
+        }
+    }
     update(time) {
         // Debug.log("RabText update 调用")
         // Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
+    }
+}
+function writeTextOnCanvas(cns, lh, rw, text) {
+    cns = document.getElementById(cns);
+    var ctx = cns.getContext("2d");
+    var lineheight = lh;
+    var text = text;
+
+    ctx.width = cns.width;
+    ctx.height = cns.height;
+
+    ctx.clearRect(0, 0, ctx.width, ctx.height);
+    ctx.font = "16px 微软雅黑";
+    ctx.fillStyle = "#f00";
+
+    function getTrueLength(str) { //获取字符串的真实长度（字节长度）
+        var len = str.length,
+            truelen = 0;
+        for (var x = 0; x < len; x++) {
+            if (str.charCodeAt(x) > 128) {
+                truelen += 2;
+            } else {
+                truelen += 1;
+            }
+        }
+        return truelen;
+    }
+
+    function cutString(str, leng) { //按字节长度截取字符串，返回substr截取位置
+        var len = str.length,
+            tlen = len,
+            nlen = 0;
+        for (var x = 0; x < len; x++) {
+            if (str.charCodeAt(x) > 128) {
+                if (nlen + 2 < leng) {
+                    nlen += 2;
+                } else {
+                    tlen = x;
+                    break;
+                }
+            } else {
+                if (nlen + 1 < leng) {
+                    nlen += 1;
+                } else {
+                    tlen = x;
+                    break;
+                }
+            }
+        }
+        return tlen;
+    }
+    for (var i = 1; getTrueLength(text) > 0; i++) {
+        var tl = cutString(text, rw);
+        ctx.fillText(text.substr(0, tl).replace(/^\s+|\s+$/, ""), 10, i * lineheight + 50);
+        text = text.substr(tl);
     }
 }
 
@@ -2256,19 +2418,19 @@ export class Rect extends RabObject {
     get height() {
         return this._height;
     }
-    constructor(x, y, w, h) {
+    constructor(x?, y?, w?, h?) {
         super();
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
+        this.x = x ? x : 0;
+        this.y = y ? y : 0;
+        this.w = w ? w : 0;
+        this.h = h ? h : 0;
     }
 
     bottom() {
         return this.y + this.h;
     }
 
-    collidePoint(point) {
+    collidePoint(point: number[]) {
         return (
             point[0] >= this.x &&
             point[0] < this.x + this.w &&
@@ -2507,10 +2669,17 @@ export class Canvas extends Component {
         super();
         if (Canvas.Instance) return null;
         Canvas.Instance = this;
+        Rabbit.Instance.canvas = this;
         this.resolution = {
             width: Rabbit.Instance.htmlCanvas.width,
             height: Rabbit.Instance.htmlCanvas.height
         }
+        Debug.log("Canvas width: ", this.resolution.width)
+        Debug.log("Canvas height: ", this.resolution.height)
+    }
+    onLoad() {
+        this.entity.transform.width = this.resolution.width;
+        this.entity.transform.height = this.resolution.height;
     }
 }
 @rClass

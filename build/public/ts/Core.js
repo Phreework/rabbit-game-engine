@@ -16,10 +16,10 @@ var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, 
 */
 import { rClass } from "../ts/Decorator.js";
 import { Debug } from "./Debug.js";
+
 /**
  * 记录了所有Engine Class的map
  */
-
 export const rabbitClass = {};
 /**
  * 记录当前引擎版本
@@ -34,12 +34,6 @@ export const rabbitVersion = "0.2";
  */
 
 export let KeyType;
-/**
- * ###en
- * 
- * ###zh
- * 游戏实例
- */
 
 (function (KeyType) {
   KeyType[KeyType["A"] = 65] = "A";
@@ -85,6 +79,26 @@ export let KeyType;
   KeyType[KeyType["SPACE"] = 32] = "SPACE";
 })(KeyType || (KeyType = {}));
 
+export class RabbitMouseEvent {
+  constructor(e) {
+    this.x = void 0;
+    this.y = void 0;
+    this.x = e.x;
+    this.y = e.y;
+  }
+
+  getLocation() {
+    return new Vec2(this.x, this.y);
+  }
+
+}
+/**
+ * ###en
+ * 
+ * ###zh
+ * 游戏实例
+ */
+
 export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
   /**
    * Rabbit运行环境唯一实例
@@ -121,6 +135,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.keysPressed = [];
     this.maxFrameTime = 0.030;
     this.time = undefined;
+    this.frameCacul = 0;
     this._nextWorld = null;
     this.worldMap = new Map();
     this.isRabbitRun = false;
@@ -128,6 +143,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.entitySystem = void 0;
     this.compSystem = void 0;
     this.eventSystem = void 0;
+    this.tweenSystem = void 0;
     this.isMouseDown = false;
     if (Rabbit.Instance) return;
     Rabbit.Instance = this;
@@ -135,6 +151,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.entitySystem = new EntitySystem();
     this.compSystem = new CompSystem();
     this.eventSystem = new EventSystem();
+    this.tweenSystem = new TweenSystem();
   }
   /**
    * 初始化游戏
@@ -285,7 +302,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
   _canvasMouseDown(event) {
     event.preventDefault();
-    this.mouseDown();
+    this.mouseDown(event);
   }
   /**
    * 键盘下键按下
@@ -317,9 +334,9 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
   /**
    * 鼠标下键按下
    */
-  mouseDown() {
+  mouseDown(e) {
     this.isMouseDown = true;
-    this.world.mouseDown();
+    this.world.mouseDown(e);
     this.mouse.pressed = true;
   }
   /**
@@ -328,9 +345,9 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
    */
 
 
-  mouseUp() {
+  mouseUp(e) {
     this.isMouseDown = false;
-    this.world.mouseUp();
+    this.world.mouseUp(e);
     this.mouse.pressed = true;
   }
   /**
@@ -346,10 +363,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
 
     this.mouse.x = mousePos[0];
     this.mouse.y = mousePos[1];
-    this.world.mousePress({
-      x: mousePos[0],
-      y: mousePos[1]
-    });
+    this.world.mousePress(event);
   }
   /**
    * 鼠标出绘制屏幕
@@ -463,6 +477,7 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     let dtime = (Date.now() - this.time) / 1000;
     if (dtime > this.maxFrameTime) dtime = this.maxFrameTime;
     this.time = Date.now();
+    this.frameCacul++;
     this.world.update(dtime);
     this.context.clearRect(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
     this.world.draw();
@@ -589,7 +604,7 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
     };
 
     Rabbit.Instance.htmlCanvas.onmouseup = e => {
-      Rabbit.Instance.mouseUp();
+      Rabbit.Instance.mouseUp(e);
     };
 
     Rabbit.Instance.htmlCanvas.onmouseout = e => {
@@ -642,20 +657,21 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
     this.sendMessage(new EventDisPatcher("keyUp", key));
   }
 
-  mouseDown() {
-    this.sendMessage(new EventDisPatcher("mouseDown"));
+  mouseDown(event) {
+    console.log("mouseEvent", event);
+    this.sendMessage(new EventDisPatcher("mouseDown", event));
   }
 
   mousePress(event) {
     this.sendMessage(new EventDisPatcher("mousePress", event));
   }
 
-  mouseUp() {
-    this.sendMessage(new EventDisPatcher("mouseUp"));
+  mouseUp(event) {
+    this.sendMessage(new EventDisPatcher("mouseUp", event));
   }
 
-  mouseOut() {
-    this.sendMessage(new EventDisPatcher("mouseOut"));
+  mouseOut(event) {
+    this.sendMessage(new EventDisPatcher("mouseOut", event));
   }
 
   removeListener(event, func, bind) {
@@ -708,6 +724,31 @@ export let EventSystem = rClass(_class7 = (_temp4 = _class8 = class EventSystem 
   }
 
 }, _class8.Instance = void 0, _temp4)) || _class7;
+export class TweenSystem {
+  update(dtime) {
+    const tweens = Rabbit.Instance.world.tweens;
+    const deleteTweens = [];
+
+    for (let i = tweens.length - 1; i >= 0; --i) {
+      const tween = tweens[i];
+      if (tween.isPlaying()) tween.update(Rabbit.Instance.time);else deleteTweens.push(tween);
+    }
+
+    deleteTweens.forEach(item => {
+      EngineTools.deleteItemFromList(item, tweens);
+    });
+  }
+
+  addTween(tween) {
+    Rabbit.Instance.world.tweens.push(tween);
+  }
+
+  constructor() {
+    TweenSystem.Instance = this;
+  }
+
+}
+TweenSystem.Instance = void 0;
 export class EventListener {
   constructor(event, func, bind, entity, isonce) {
     this.entity = void 0;
@@ -728,6 +769,16 @@ export class EventListener {
     if (dispatcher.eventType == this.eventType) {
       if (this.eventType == EventType.POSITION_CHANGED && dispatcher.args[0] != this.entity) {
         return false;
+      }
+
+      if (this.eventType == EventType.MOUSE_DOWN) {
+        if (this.entity.transform.getRect().collidePoint([dispatcher.args[0].x, dispatcher.args[0].y])) {
+          console.log("点击成功");
+          return true;
+        } else {
+          console.log("点击失败");
+          return false;
+        }
       }
 
       this.func.apply(this.bind, dispatcher.args);
@@ -854,6 +905,10 @@ export let Vec2 = rClass(_class13 = (_temp6 = class Vec2 {
     this.y = y ? y : 0;
   }
 
+  sub(other) {
+    return new Vec2(this.x - other.x, this.y - other.y);
+  }
+
 }, _temp6)) || _class13;
 export let Vec3 = rClass(_class15 = (_temp7 = class Vec3 {
   get x() {
@@ -943,7 +998,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     this._scale = new Vec2(1, 1);
     this._worldScale = new Vec2(1, 1);
     this._color = Color.BLACK;
-    this._size = new Vec2(0, 0);
+    this._rect = new Rect(0, 0, 0, 0);
     this.x = x ? x : this.x;
     this.y = y ? y : this.y;
     this.width = width ? width : this.width;
@@ -1153,7 +1208,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   get size() {
-    return this._size;
+    return new Vec2(this._rect.w, this._rect.h);
   }
   /**
    * 设置宽高对象
@@ -1161,7 +1216,8 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   set size(size) {
-    this._size = size;
+    this._rect.w = size.width;
+    this._rect.h = size.height;
     this.updateSize();
   }
   /**
@@ -1170,7 +1226,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   get width() {
-    return this._size.width;
+    return this._rect.width;
   }
   /**
    * 设置width
@@ -1178,7 +1234,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   set width(width) {
-    this._size.width = width;
+    this._rect.w = width;
     this.updateSize();
   }
   /**
@@ -1187,7 +1243,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   get height() {
-    return this._size.height;
+    return this._rect.height;
   }
   /**
    * 设置height
@@ -1195,7 +1251,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
 
 
   set height(height) {
-    this._size.height = height;
+    this._rect.height = height;
     this.updateSize();
   }
   /**
@@ -1360,7 +1416,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
   tween() {}
 
   getRect() {
-    return new Rect(this.x, this.y, this.width, this.height);
+    return this._rect;
   }
 
   updateForParent() {
@@ -1459,6 +1515,7 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     }
 
     if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+    this.updateRect();
     this.updateChildren();
   }
 
@@ -1467,7 +1524,13 @@ export let Transform = rClass(_class19 = (_temp9 = class Transform extends Compo
     this._position.y = this.parent ? this.worldPosition.y - this.parent.worldPosition.y : this.worldY;
     this._position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
     if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+    this.updateRect();
     this.updateChildren();
+  }
+
+  updateRect() {
+    this._rect.x = this.worldPosition.x;
+    this._rect.y = this.worldPosition.y;
   }
 
   static calcNewPoint(p, pCenter, angle) {
@@ -1804,7 +1867,15 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
    */
 
   /**
+   * 补间动画管理系统唯一实例
+   */
+
+  /**
    * 事件监听器集合
+   */
+
+  /**
+   * tween动画集合
    */
 
   /**
@@ -1820,7 +1891,9 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
     this.maxId = 0;
     this.entitySystem = Rabbit.Instance.entitySystem;
     this.eventSystem = Rabbit.Instance.eventSystem;
+    this.tweenSystem = Rabbit.Instance.tweenSystem;
     this.eventListeners = [];
+    this.tweens = [];
     this.init = void 0;
     this.name = name;
   }
@@ -1920,8 +1993,9 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
    */
 
 
-  mouseDown() {
-    this.eventSystem.mouseDown();
+  mouseDown(event) {
+    const mouseEvent = new RabbitMouseEvent(event);
+    this.eventSystem.mouseDown(mouseEvent);
   }
   /**
    * 鼠标按住事件
@@ -1929,23 +2003,26 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
 
 
   mousePress(event) {
-    this.eventSystem.mousePress(event);
+    const mouseEvent = new RabbitMouseEvent(event);
+    this.eventSystem.mousePress(mouseEvent);
   }
   /**
    * 鼠标抬起事件
    */
 
 
-  mouseUp() {
-    this.eventSystem.mouseUp();
+  mouseUp(event) {
+    const mouseEvent = new RabbitMouseEvent(event);
+    this.eventSystem.mouseUp(mouseEvent);
   }
   /**
    * 鼠标出屏事件
    */
 
 
-  mouseOut() {
-    this.eventSystem.mouseOut();
+  mouseOut(event) {
+    const mouseEvent = new RabbitMouseEvent(event);
+    this.eventSystem.mouseOut(mouseEvent);
   }
   /**
    * 按键按下事件，无需手动调用
@@ -1954,6 +2031,7 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
 
   update(dtime) {
     this.eventSystem.update(dtime);
+    this.tweenSystem.update(dtime);
   }
   /**
    * start事件，无需手动调用
@@ -1973,6 +2051,7 @@ export let World = rClass(_class26 = (_temp12 = class World extends RabObject {
     this.entities = [];
     this.preDestroys = [];
     this.eventListeners = [];
+    this.tweens = [];
     this.maxId = 0;
   }
   /**
@@ -2168,14 +2247,20 @@ export let Color = rClass(_class32 = (_temp15 = class Color {
  */
 
 export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends GraphicComponent {
-  /**
-   * @todo
-   */
+  get text() {
+    return this._text;
+  }
+
+  set text(value) {
+    this._text = value;
+    this.updateSize();
+  }
+
   constructor(x, y, text, font, colour, size, align) {
     super(); // this.x = x || 0;
     // this.y = y || 0;
 
-    this.text = void 0;
+    this._text = void 0;
     this.font = void 0;
     this.colour = void 0;
     this.textSize = void 0;
@@ -2216,15 +2301,15 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
   draw() {
     Rabbit.Instance.context.save();
     const transform = this.entity.transform;
-    const value = transform.worldAngle * Math.PI / 180;
-    this.w = Rabbit.Instance.context.measureText(this.text).width;
     Rabbit.Instance.context.textBaseline = 'top';
     Rabbit.Instance.context.textAlign = this.align;
     Rabbit.Instance.context.font = this.textSize + "px " + this.font;
     Rabbit.Instance.context.fillStyle = this.colour;
-    Rabbit.Instance.context.translate(transform.worldX, transform.worldY); // console.log("x,y", transform.worldX, transform.worldY)
+    Rabbit.Instance.context.translate(transform.worldX, transform.worldY); // console.log("x,y", transform.worldX, transform.worldY)\
 
+    const value = transform.worldAngle * Math.PI / 180;
     Rabbit.Instance.context.rotate(value);
+    Rabbit.Instance.context.scale(transform.scaleX, transform.scaleY);
     Rabbit.Instance.context.translate(-transform.worldX, -transform.worldY);
 
     if (transform.parent) {
@@ -2232,15 +2317,43 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
       Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
       const angleParent = transform.parent.worldAngle * Math.PI / 180;
       Rabbit.Instance.context.rotate(angleParent);
-      Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
+      this.renderText(this.text, transform.x, transform.y); // Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
     } else {
       // console.log("scale2", transform.worldScale);
       Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
-      Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
-      Rabbit.Instance.context.fillText(this.text, 0, 0);
+      Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY); // Rabbit.Instance.context.fillText(this.text, 0, 0);
+
+      this.renderText(this.text, 0, 0);
     }
 
     Rabbit.Instance.context.restore();
+  }
+
+  renderText(origintext, x, y, isupdatesize) {
+    const textArr = origintext.split("\n");
+
+    for (let i = 0; i < textArr.length; i++) {
+      const text = textArr[i];
+      Rabbit.Instance.context.fillText(text, x, y);
+      y += this.textSize;
+    }
+  }
+
+  updateSize() {
+    this.h = 0;
+    this.w = 0;
+    const textArr = this.text.split("\n");
+
+    for (let i = 0; i < textArr.length; i++) {
+      const text = textArr[i];
+      this.h += this.textSize;
+      const nowWidth = Rabbit.Instance.context.measureText(text).width;
+      this.w = nowWidth > this.w ? nowWidth : this.w;
+    }
+
+    if (this.entity) {
+      this.entity.transform.size = new Vec2(this.w, this.h);
+    }
   }
 
   update(time) {// Debug.log("RabText update 调用")
@@ -2248,9 +2361,71 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
   }
 
 }, _class35.TextAlignType = TextAlignType, _temp16)) || _class34;
+
+function writeTextOnCanvas(cns, lh, rw, text) {
+  cns = document.getElementById(cns);
+  var ctx = cns.getContext("2d");
+  var lineheight = lh;
+  var text = text;
+  ctx.width = cns.width;
+  ctx.height = cns.height;
+  ctx.clearRect(0, 0, ctx.width, ctx.height);
+  ctx.font = "16px 微软雅黑";
+  ctx.fillStyle = "#f00";
+
+  function getTrueLength(str) {
+    //获取字符串的真实长度（字节长度）
+    var len = str.length,
+        truelen = 0;
+
+    for (var x = 0; x < len; x++) {
+      if (str.charCodeAt(x) > 128) {
+        truelen += 2;
+      } else {
+        truelen += 1;
+      }
+    }
+
+    return truelen;
+  }
+
+  function cutString(str, leng) {
+    //按字节长度截取字符串，返回substr截取位置
+    var len = str.length,
+        tlen = len,
+        nlen = 0;
+
+    for (var x = 0; x < len; x++) {
+      if (str.charCodeAt(x) > 128) {
+        if (nlen + 2 < leng) {
+          nlen += 2;
+        } else {
+          tlen = x;
+          break;
+        }
+      } else {
+        if (nlen + 1 < leng) {
+          nlen += 1;
+        } else {
+          tlen = x;
+          break;
+        }
+      }
+    }
+
+    return tlen;
+  }
+
+  for (var i = 1; getTrueLength(text) > 0; i++) {
+    var tl = cutString(text, rw);
+    ctx.fillText(text.substr(0, tl).replace(/^\s+|\s+$/, ""), 10, i * lineheight + 50);
+    text = text.substr(tl);
+  }
+}
 /**
  * @deprecated 已弃用
  */
+
 
 export let BoundingBox = rClass(_class36 = (_temp17 = class BoundingBox extends RabObject {
   constructor(v1, v2, v3, v4) {
@@ -2313,10 +2488,10 @@ export let Rect = rClass(_class38 = (_temp18 = class Rect extends RabObject {
     this.y = void 0;
     this._width = void 0;
     this._height = void 0;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
+    this.x = x ? x : 0;
+    this.y = y ? y : 0;
+    this.w = w ? w : 0;
+    this.h = h ? h : 0;
   }
 
   bottom() {
@@ -2550,10 +2725,18 @@ export let Canvas = rClass(_class46 = (_temp22 = _class47 = class Canvas extends
     this.isFitHeight = true;
     if (Canvas.Instance) return null;
     Canvas.Instance = this;
+    Rabbit.Instance.canvas = this;
     this.resolution = {
       width: Rabbit.Instance.htmlCanvas.width,
       height: Rabbit.Instance.htmlCanvas.height
     };
+    Debug.log("Canvas width: ", this.resolution.width);
+    Debug.log("Canvas height: ", this.resolution.height);
+  }
+
+  onLoad() {
+    this.entity.transform.width = this.resolution.width;
+    this.entity.transform.height = this.resolution.height;
   }
 
 }, _class47.Instance = void 0, _temp22)) || _class46;

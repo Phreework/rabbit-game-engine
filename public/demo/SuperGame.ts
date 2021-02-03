@@ -1,6 +1,6 @@
-import { Canvas, Color, Component, Entity, Rabbit, Rect, Text, Vec2, Vec3 } from "../ts/Core";
-import { NodePool as EntityPool } from "../ts/NodePool";
-import Tween from "../ts/tweens/Tween";
+import { Canvas, Color, Component, Entity, Rabbit, Rect, Text, TextAlignType, Vec2, Vec3 } from "../ts/Core.js";
+import { NodePool as EntityPool } from "../ts/NodePool.js";
+import Tween from "../ts/tweens/Tween.js";
 
 const playerModel: string =
     "                                 __                                 " + "\n" +
@@ -101,7 +101,7 @@ export default class SuperGame {
     }
 
     private BulletShoot() {
-        const tween = new Tween(this.player).delay(0.3).call(() => { this.shootOneBullet(); tween.start(); }).start();
+        const tween = new Tween(this.player).delay(0.3).onComplete(() => { this.shootOneBullet(); tween.start(); }).start();
     }
     private gameOver() {
         const gameOverNode = new Entity();
@@ -119,7 +119,7 @@ export default class SuperGame {
     private initEnemy() {
         const enemy = this.getAscIIModel(enemyModel);
         this.root.addChild(enemy);
-        enemy.transform.setPosition(0, 320);
+        enemy.transform.setPosition(0, -320);
         // console.log("enemy大小",enemy.getContentSize());
 
         let hp = 10;
@@ -130,6 +130,7 @@ export default class SuperGame {
         hpLab.lineHeight = 40;
         hpNode.transform.color = Color.BLACK;
         hpLab.text = 'HP:----------';
+        hpLab.align = TextAlignType.center;
         hpNode.transform.setPosition(0, enemy.transform.height / 2 + 50);
 
         const collider = enemy.addComponent(SuperBoxCollider);
@@ -149,9 +150,12 @@ export default class SuperGame {
 
     private initPlayer() {
         const player = this.getAscIIModel(playerModel);
-        player.transform.scaleY = -1;
+        console.log("player初始化");
         this.root.addChild(player);
-        player.transform.setPosition(0, -350);
+        player.transform.scaleY = -1;
+        console.log("root", this.root);
+        player.transform.setPosition(0, 350);
+        console.log("player设置坐标后", player.transform.getRect());
         const playerTouchCtl = new TouchController(player);
         playerTouchCtl.startEvent = () => {
             (player as any).startPoint = player.transform.position;
@@ -172,9 +176,9 @@ export default class SuperGame {
         const bulletStartPos: Vec3 = new Vec3(this.player.transform.x, this.player.transform.top);
         bullet.transform.setPosition(bulletStartPos);
         const bulletFlyTween = new Tween(bullet);
-        bulletFlyTween.target(bullet)
-            .by(1, { y: 300 })
-            .call(() => {
+        bulletFlyTween
+            .by({ y: 300 }, 1)
+            .onComplete(() => {
                 if (bullet.transform.y >= this.BOUND_UP + bullet.transform.height * 2) {
                     bullet.destroy();
                     console.log("bullet销毁");
@@ -199,11 +203,7 @@ export default class SuperGame {
         return bullet;
     }
     private setRoot() {
-        this.root = new Entity();
-        this.canvas.entity.addChild(this.root);
-        this.root.transform.setPosition(new Vec2(0, 0));
-        this.root.transform.width = this.canvas.resolution.width;
-        this.root.transform.height = this.canvas.resolution.height;
+        this.root = this.canvas.entity;
         this.BOUND_WIDTH = this.root.transform.width;
         this.BOUND_HEIGHT = this.root.transform.height;
         this.BOUND_LEFT = this.root.transform.left;
@@ -232,6 +232,7 @@ export default class SuperGame {
         // labelOutline.color = cc.Color.BLACK;
         // labelOutline.width = 2;
         // console.log(label.string);
+        console.log("模型"+flyNode.transform.entity.name,flyNode.transform.getRect());
         return flyNode;
     }
 }
@@ -242,10 +243,10 @@ export default class SuperGame {
 export class TouchController {
     target: Entity;
     isAllowTouch: boolean = true;   //允许移动
-    startPoint: any;
-    endPoint: any;
-    movePoint: any;
-    moveEvent: (vecadd: any) => void;
+    startPoint: Vec2;
+    endPoint: Vec2;
+    movePoint: Vec2;
+    moveEvent: (vecadd: Vec2) => void;
     startEvent: () => void;
     constructor(node: Entity) {
         this.target = node;
@@ -292,7 +293,7 @@ export class TouchController {
 
     finishUserMove() {
         // sub 向量减法，并返回新结果。
-        let vec = this.movePoint.sub(this.startPoint);
+        const vec: Vec2 = this.movePoint.sub(this.startPoint);
         this.moveEvent(vec);
         // 设置长度才去执行响应
         // 计算两点之间的向量及其模长：cc.pSub(p1, p2) 从 v2.0 开始被废弃，目前最新的替代方法是：p1.sub(p2)；

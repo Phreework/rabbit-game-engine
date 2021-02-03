@@ -5,15 +5,45 @@
 	<meta charset="utf-8">
 	<title>rabbit demo - Test Engine Demo</title>
 </head>
+<style>
+	* {
+		margin: 0;
+		padding: 0;
+	}
+
+	html,
+	body {
+		height: 100%;
+		width: 100%;
+	}
+
+	canvas {
+		width: 720px;
+		height: 1280px;
+		display: block;
+		background: #000000;
+	}
+</style>
+<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 
 <body>
-	<canvas id="rabbit-canvas" style="width: 1024px; height: 512px; background: black">
-		<p>error out</p>
+	<canvas id="rabbit-canvas">
+		<!-- <p>error out</p> -->
 	</canvas>
 
-	<p>Made with <a href="https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p>
+	<!-- <p>Made with <a href="https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p> -->
 	<script type="module">
-		import {TestDemo} from '../build/public/demo/TestDemo.js'
+
+		$(function () {
+			var canvas = $('#rabbit-canvas');
+			canvas.attr("width", $(window).get(0).innerWidth)
+			canvas.attr("height", $(window).get(0).innerHeight)
+			$(window).resize(function () {
+				canvas.attr("width", $(window).get(0).innerWidth)
+				canvas.attr("height", $(window).get(0).innerHeight)
+			});
+		});
+		import { TestDemo } from '../build/public/demo/TestDemo.js'
 		TestDemo.main();
 	</script>
 </body>
