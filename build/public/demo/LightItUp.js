@@ -1,4 +1,4 @@
-import { Entity, Circle, SplashCanvas, Rabbit, World, Component, AudioSystem, EventType } from "../ts/Core.js";
+import { Entity, Circle, SplashCanvas, Rabbit, World, Component, AudioSystem, EventType, Vec2 } from "../ts/Core.js";
 
 class Light extends Component {
   constructor(...args) {
@@ -18,6 +18,7 @@ class Light extends Component {
     this.gy = gy;
     let x = gx * (radius * 2 + 1);
     let y = gy * (radius * 2 + 1);
+    this.entity.transform.setPosition(x + radius, y + radius);
     this.radius = radius;
     this.lit = true;
     this.board = board;
@@ -33,6 +34,7 @@ class Light extends Component {
     this.light.context.arc(radius, radius, this.radius, 0, 360);
     this.light.context.fill();
     this.entity.graphic = this.dark;
+    this.entity.transform.size = new Vec2(this.radius, this.radius);
   }
 
   onLoad() {

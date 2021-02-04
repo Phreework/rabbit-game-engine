@@ -26,6 +26,7 @@ export class TestDemo {
 
   static main() {
     const rabbit = new Rabbit();
+    rabbit.debugMode = true;
     rabbit.init();
     const demos = [];
     demos.push(demo2());

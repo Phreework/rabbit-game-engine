@@ -34,15 +34,15 @@
 	<!-- <p>Made with <a href="https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p> -->
 	<script type="module">
 
-		$(function () {
-			var canvas = $('#rabbit-canvas');
-			canvas.attr("width", $(window).get(0).innerWidth)
-			canvas.attr("height", $(window).get(0).innerHeight)
-			$(window).resize(function () {
-				canvas.attr("width", $(window).get(0).innerWidth)
-				canvas.attr("height", $(window).get(0).innerHeight)
-			});
-		});
+		// $(function () {
+		// 	var canvas = $('#rabbit-canvas');
+		// 	canvas.attr("width", $(window).get(0).innerWidth)
+		// 	canvas.attr("height", $(window).get(0).innerHeight)
+		// 	$(window).resize(function () {
+		// 		canvas.attr("width", $(window).get(0).innerWidth)
+		// 		canvas.attr("height", $(window).get(0).innerHeight)
+		// 	});
+		// });
 		import { TestDemo } from '../build/public/demo/TestDemo.js'
 		TestDemo.main();
 	</script>

@@ -261,6 +261,7 @@ export class TouchController {
         this.target.listen(Entity.EventType.MOUSE_DOWN, (event) => {
             if (!this.isAllowTouch) return;
             this.startPoint = event.getLocation();
+            console.log("startPoint change",this.startPoint)
             this.startEvent();
         }, this);
         //touchend 当手指在目标节点区域内离开屏幕时。 */

@@ -1,4 +1,4 @@
-var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _class22, _temp10, _class23, _temp11, _class25, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _class35, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44, _temp21, _class46, _class47, _temp22, _class48, _temp23, _class50, _temp24, _class52, _temp25, _class54;
+var _class, _class2, _temp, _class3, _class4, _temp2, _class5, _class6, _temp3, _class7, _class8, _temp4, _class9, _class10, _temp5, _class12, _class13, _temp6, _class15, _temp7, _class17, _temp8, _class19, _temp9, _class21, _class22, _temp10, _class23, _temp11, _class25, _class26, _temp12, _class28, _temp13, _class30, _temp14, _class32, _temp15, _class34, _class35, _temp16, _class36, _temp17, _class38, _temp18, _class40, _temp19, _class42, _temp20, _class44, _temp21, _class46, _class47, _temp22, _class48, _temp23, _class50, _temp24, _class52, _temp25, _class54, _class55;
 
 /** 
  * --------------------------------------------------------
@@ -144,6 +144,8 @@ export let Rabbit = rClass(_class = (_temp = _class2 = class Rabbit {
     this.compSystem = void 0;
     this.eventSystem = void 0;
     this.tweenSystem = void 0;
+    this.debugMode = false;
+    this.debugTools = void 0;
     this.isMouseDown = false;
     if (Rabbit.Instance) return;
     Rabbit.Instance = this;
@@ -772,9 +774,12 @@ export class EventListener {
       }
 
       if (this.eventType == EventType.MOUSE_DOWN) {
-        if (this.entity.transform.getRect().collidePoint([dispatcher.args[0].x, dispatcher.args[0].y])) {
+        const mouse = [dispatcher.args[0].x, dispatcher.args[0].y];
+        console.log("rect", this.entity.transform.getRect());
+        console.log("mouse", mouse);
+
+        if (this.entity.transform.getRect().collidePoint(mouse)) {
           console.log("点击成功");
-          return true;
         } else {
           console.log("点击失败");
           return false;
@@ -2299,42 +2304,55 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
   updateScale() {}
 
   draw() {
-    Rabbit.Instance.context.save();
+    const ctx = Rabbit.Instance.context;
     const transform = this.entity.transform;
-    Rabbit.Instance.context.textBaseline = 'top';
-    Rabbit.Instance.context.textAlign = this.align;
-    Rabbit.Instance.context.font = this.textSize + "px " + this.font;
-    Rabbit.Instance.context.fillStyle = this.colour;
-    Rabbit.Instance.context.translate(transform.worldX, transform.worldY); // console.log("x,y", transform.worldX, transform.worldY)\
+    ctx.save();
+    ctx.textBaseline = 'top';
+    ctx.textAlign = this.align;
+    ctx.font = this.textSize + "px " + this.font;
+    ctx.fillStyle = this.colour;
+    const selfAngle = transform.worldAngle * Math.PI / 180;
+    ctx.translate(transform.worldX, transform.worldY);
+    ctx.rotate(selfAngle);
+    ctx.scale(transform.scaleX, transform.scaleY);
+    /**
+     * @todo 放大后是否需要对translate做处理？
+     */
 
-    const value = transform.worldAngle * Math.PI / 180;
-    Rabbit.Instance.context.rotate(value);
-    Rabbit.Instance.context.scale(transform.scaleX, transform.scaleY);
-    Rabbit.Instance.context.translate(-transform.worldX, -transform.worldY);
+    ctx.translate(-transform.worldX, -transform.worldY);
 
     if (transform.parent) {
-      Rabbit.Instance.context.translate(transform.parent.worldX, transform.parent.worldY);
-      Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY);
-      const angleParent = transform.parent.worldAngle * Math.PI / 180;
-      Rabbit.Instance.context.rotate(angleParent);
-      this.renderText(this.text, transform.x, transform.y); // Rabbit.Instance.context.fillText(this.text, transform.x, transform.y);
+      const parentAngle = transform.parent.worldAngle * Math.PI / 180;
+      ctx.translate(transform.parent.worldX, transform.parent.worldY);
+      ctx.scale(transform.worldScaleX, transform.worldScaleY);
+      ctx.rotate(parentAngle);
+      this.renderText(this.text, transform.x, transform.y);
     } else {
-      // console.log("scale2", transform.worldScale);
-      Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
-      Rabbit.Instance.context.scale(transform.worldScaleX, transform.worldScaleY); // Rabbit.Instance.context.fillText(this.text, 0, 0);
-
+      ctx.translate(transform.worldX, transform.worldY);
+      ctx.scale(transform.worldScaleX, transform.worldScaleY);
       this.renderText(this.text, 0, 0);
     }
 
-    Rabbit.Instance.context.restore();
+    ctx.restore();
+
+    if (Rabbit.Instance.debugMode) {
+      ctx.save();
+      const rect = transform.getRect();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "red";
+      ctx.strokeRect(rect.x - rect.width / 2, rect.y - rect.height / 2, rect.width, rect.height);
+      ctx.restore();
+    }
   }
 
   renderText(origintext, x, y, isupdatesize) {
+    y -= this.h / 2;
     const textArr = origintext.split("\n");
+    const ctx = Rabbit.Instance.context;
 
     for (let i = 0; i < textArr.length; i++) {
       const text = textArr[i];
-      Rabbit.Instance.context.fillText(text, x, y);
+      ctx.fillText(text, x, y);
       y += this.textSize;
     }
   }
@@ -2356,9 +2374,7 @@ export let Text = rClass(_class34 = (_temp16 = _class35 = class Text extends Gra
     }
   }
 
-  update(time) {// Debug.log("RabText update 调用")
-    // Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
-  }
+  update(time) {}
 
 }, _class35.TextAlignType = TextAlignType, _temp16)) || _class34;
 
@@ -2499,7 +2515,7 @@ export let Rect = rClass(_class38 = (_temp18 = class Rect extends RabObject {
   }
 
   collidePoint(point) {
-    return point[0] >= this.x && point[0] < this.x + this.w && point[1] >= this.y && point[1] < this.y + this.h;
+    return point[0] >= this.x - this.w / 2 && point[0] < this.x + this.w / 2 && point[1] >= this.y - this.h / 2 && point[1] < this.y + this.h / 2;
   }
 
   collideRect(rect) {
@@ -2994,4 +3010,25 @@ export let EngineTools = rClass(_class54 = class EngineTools {
     if (!flag) Debug.warn("deleteItemFromList方法未找到要删除的元素");
   }
 
-}) || _class54; // export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
+}) || _class54;
+/**
+ * @class 调试工具类
+ */
+
+export let DebugTools = rClass(_class55 = class DebugTools {
+  static drawRect(trans) {
+    Rabbit.Instance.context.save(); // console.log("name: ", trans.entity.name);
+    // console.log("x: ", rect.x - rect.width / 2);
+    // console.log("y: ", rect.y - rect.height / 2);
+    // console.log("width: ", rect.width);
+    // console.log("height: ", rect.height);
+
+    const rect = trans.getRect();
+    Rabbit.Instance.context.lineWidth = 4;
+    Rabbit.Instance.context.strokeStyle = "red";
+    Rabbit.Instance.context.rect(rect.x - rect.width / 2, rect.y - rect.height / 2, rect.width, rect.height);
+    Rabbit.Instance.context.stroke();
+    Rabbit.Instance.context.restore();
+  }
+
+}) || _class55; // export { rabbitClass, Rabbit, SplashCanvas, Circle, Collision, Entity, Graphic, GraphicList, RabObject, RabText, Rect, Sfx, Sprite, Tilemap, World, RabKeyType, RabImage, Component, TestComponent };
