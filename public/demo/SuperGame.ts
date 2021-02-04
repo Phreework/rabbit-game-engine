@@ -162,7 +162,7 @@ export default class SuperGame {
         };
         playerTouchCtl.moveEvent = (vecadd) => {
             const startPoint = (player as any).startPoint;
-            player.transform.setPosition(startPoint.x + vecadd.x, startPoint.y + vecadd.y);
+            player.transform.setPosition(startPoint.x + vecadd.x, startPoint.y - vecadd.y);
         };
         const collider = player.addComponent(SuperBoxCollider);
         collider.group = "player";

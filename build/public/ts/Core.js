@@ -769,21 +769,22 @@ export class EventListener {
     if (!this.entity || !this.entity.active || !this.func) return;
 
     if (dispatcher.eventType == this.eventType) {
-      if (this.eventType == EventType.POSITION_CHANGED && dispatcher.args[0] != this.entity) {
-        return false;
-      }
-
-      if (this.eventType == EventType.MOUSE_DOWN) {
-        const mouse = [dispatcher.args[0].x, dispatcher.args[0].y];
-        console.log("rect", this.entity.transform.getRect());
-        console.log("mouse", mouse);
+      if (this.eventType == EventType.POSITION_CHANGED) {
+        if (dispatcher.args[0] != this.entity) return false;
+      } else if (this.eventType == EventType.MOUSE_DOWN) {
+        const mouse = [dispatcher.args[0].x, dispatcher.args[0].y]; // console.log("rect", this.entity.transform.getRect());
+        // console.log("mouse", mouse);
 
         if (this.entity.transform.getRect().collidePoint(mouse)) {
+          this.entity._isMouseDown = true;
+          this.entity.listenOnce(EventType.MOUSE_UP, () => this.entity._isMouseDown = false);
           console.log("点击成功");
         } else {
           console.log("点击失败");
           return false;
         }
+      } else if (this.eventType == EventType.MOUSE_PRESS || this.eventType == EventType.MOUSE_UP || this.eventType == EventType.MOUSE_OUT) {
+        if (!this.entity._isMouseDown) return false;
       }
 
       this.func.apply(this.bind, dispatcher.args);

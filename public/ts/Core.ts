@@ -642,7 +642,7 @@ export class CompSystem {
 export class EventSystem {
 
     initEventRegister() {
-        Rabbit.Instance.htmlCanvas.onmousedown = (e) => {Rabbit.Instance._canvasMouseDown(e); };
+        Rabbit.Instance.htmlCanvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e); };
         document.onkeydown = (e) => { Rabbit.Instance.keyDown(e); };
         document.onkeyup = (e) => { Rabbit.Instance.keyUp(e); };
         Rabbit.Instance.htmlCanvas.onmousemove = (e) => { Rabbit.Instance.mousePress(e); };
@@ -794,19 +794,22 @@ export class EventListener {
     checkEmit(dispatcher: EventDisPatcher): boolean {
         if (!this.entity || !this.entity.active || !this.func) return;
         if (dispatcher.eventType == this.eventType) {
-            if (this.eventType == EventType.POSITION_CHANGED && dispatcher.args[0] != this.entity) {
-                return false;
-            }
-            if (this.eventType == EventType.MOUSE_DOWN) {
+            if (this.eventType == EventType.POSITION_CHANGED) {
+                if (dispatcher.args[0] != this.entity) return false;
+            } else if (this.eventType == EventType.MOUSE_DOWN) {
                 const mouse = [(dispatcher.args[0] as MouseEvent).x, (dispatcher.args[0] as MouseEvent).y];
-                console.log("rect", this.entity.transform.getRect());
-                console.log("mouse", mouse);
+                // console.log("rect", this.entity.transform.getRect());
+                // console.log("mouse", mouse);
                 if (this.entity.transform.getRect().collidePoint(mouse)) {
+                    (this.entity as any)._isMouseDown = true;
+                    this.entity.listenOnce(EventType.MOUSE_UP, () => (this.entity as any)._isMouseDown = false);
                     console.log("点击成功");
                 } else {
                     console.log("点击失败");
                     return false;
                 }
+            } else if (this.eventType == EventType.MOUSE_PRESS || this.eventType == EventType.MOUSE_UP || this.eventType == EventType.MOUSE_OUT) {
+                if (!(this.entity as any)._isMouseDown) return false;
             }
             this.func.apply(this.bind, dispatcher.args);
             return true;
@@ -2259,10 +2262,10 @@ export class Text extends GraphicComponent {
         ctx.font = this.textSize + "px " + this.font;
         ctx.fillStyle = this.colour;
 
-        
+
         const selfAngle: number = transform.worldAngle * Math.PI / 180;
-        
-        
+
+
         ctx.translate(transform.worldX, transform.worldY);
         ctx.rotate(selfAngle);
         ctx.scale(transform.scaleX, transform.scaleY);
@@ -2270,8 +2273,8 @@ export class Text extends GraphicComponent {
          * @todo 放大后是否需要对translate做处理？
          */
         ctx.translate(-transform.worldX, -transform.worldY);
-        
-        
+
+
         if (transform.parent) {
             const parentAngle = transform.parent.worldAngle * Math.PI / 180;
             ctx.translate(transform.parent.worldX, transform.parent.worldY);
