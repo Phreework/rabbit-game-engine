@@ -12,6 +12,15 @@ import Interpolation from './Interpolation.js'
 import type { EasingFunction } from './Easing.js'
 import type { InterpolationFunction } from './Interpolation.js'
 import { Rabbit } from '../Core.js'
+enum TweenHistoryType {
+	to = "to",
+	by = "by",
+	onComplete = "onComplete"
+}
+export interface TweenHistory {
+	type: TweenHistoryType;
+	args: any[];
+}
 export class TweenSequence {
 	private static _nextId = 0
 
@@ -38,6 +47,9 @@ export class Tween<T extends UnknownProps> {
 	get startTime() {
 		return this._startTime;
 	}
+	get target(){
+		return this._object;
+	}
 	private _easingFunction: EasingFunction = Easing.Linear.None
 	private _interpolationFunction: InterpolationFunction = Interpolation.Linear
 	// eslint-disable-next-line
@@ -50,10 +62,11 @@ export class Tween<T extends UnknownProps> {
 	private _onStopCallback?: (object: T) => void
 	private _id = TweenSequence.nextId()
 	private _isChainStopped = false
-
+	
+	private _historys: TweenHistory[] = [];
 	// constructor(private _object: T, private _group: Group | false = mainGroup) {}
 	constructor(private _object: T) {
-		
+
 	}
 
 	getId(): number {
@@ -69,6 +82,12 @@ export class Tween<T extends UnknownProps> {
 	}
 
 	to(properties: UnknownProps, duration?: number): this {
+
+
+		this._historys.push({ type: TweenHistoryType.to, args: [properties, duration] });
+		return this
+	}
+	_to(properties: UnknownProps, duration?: number): this {
 		// TODO? restore this, then update the 07_dynamic_to example to set fox
 		// tween's to on each update. That way the behavior is opt-in (there's
 		// currently no opt-out).
@@ -76,26 +95,25 @@ export class Tween<T extends UnknownProps> {
 		this._valuesEnd = Object.create(properties)
 
 		if (duration !== undefined) {
-			this._duration = duration*1000
+			this._duration = duration * 1000
 		}
-
 		return this
 	}
-
 	by(properties: UnknownProps, duration?: number): this {
+
+		this._historys.push({ type: TweenHistoryType.by, args: [properties, duration] });
+		return this
+	}
+	_by(properties: UnknownProps, duration?: number): this {
 		this._valuesEnd = Object.create(properties)
 		for (const str in properties) {
-			console.log("valuesend", this._valuesEnd);
-			console.log("properties", properties);
 			this._valuesEnd[str] = this._object[str] + properties[str];
 		}
 		if (duration !== undefined) {
-			this._duration = duration*1000
+			this._duration = duration * 1000
 		}
-
 		return this
 	}
-
 	duration(d = 1000): this {
 		this._duration = d
 		return this
@@ -105,7 +123,13 @@ export class Tween<T extends UnknownProps> {
 		if (this._isPlaying) {
 			return this
 		}
+		this._valuesStart = {}
+		this._valuesEnd = {}
+		this._valuesStartRepeat = {}
 
+		this._historys.forEach((item) => {
+			this["_" + item.type].apply(this, item.args);
+		})
 		// eslint-disable-next-line
 
 		this._repeat = this._initialRepeat
@@ -134,10 +158,14 @@ export class Tween<T extends UnknownProps> {
 		this._startTime += this._delayTime
 
 		this._setupProperties(this._object, this._valuesStart, this._valuesEnd, this._valuesStartRepeat)
-		Rabbit.Instance.world.tweenSystem.addTween(this);
+		if (!this.isAddToRabbit) {
+			this.isAddToRabbit = true;
+			Rabbit.Instance.world.tweenSystem.addTween(this);
+		}
+
 		return this
 	}
-
+	isAddToRabbit: boolean = false;
 	private _setupProperties(
 		_object: UnknownProps,
 		_valuesStart: UnknownProps,
@@ -285,7 +313,7 @@ export class Tween<T extends UnknownProps> {
 	// }
 
 	delay(amount = 0): this {
-		this._delayTime = amount
+		this._delayTime = amount * 1000
 		return this
 	}
 
@@ -337,10 +365,14 @@ export class Tween<T extends UnknownProps> {
 	}
 
 	onComplete(callback?: (object: T) => void): this {
-		this._onCompleteCallback = callback
+		this._historys.push({ type: TweenHistoryType.onComplete, args: [callback] });
 		return this
 	}
+	_onComplete(callback?: (object: T) => void): this {
+		this._onCompleteCallback = callback
 
+		return this
+	}
 	onStop(callback?: (object: T) => void): this {
 		this._onStopCallback = callback
 		return this
@@ -355,7 +387,7 @@ export class Tween<T extends UnknownProps> {
 	 */
 	update(time = now()): boolean {
 		if (this._isPaused) return true
-
+		if (!this.isPlaying()) return true
 		let property
 		let elapsed
 
@@ -396,7 +428,6 @@ export class Tween<T extends UnknownProps> {
 				if (isFinite(this._repeat)) {
 					this._repeat--
 				}
-
 				// Reassign starting values, restart by making startTime = now
 				for (property in this._valuesStartRepeat) {
 					if (!this._yoyo && typeof this._valuesEnd[property] === 'string') {
@@ -429,9 +460,6 @@ export class Tween<T extends UnknownProps> {
 
 				return true
 			} else {
-				if (this._onCompleteCallback) {
-					this._onCompleteCallback(this._object)
-				}
 
 				for (let i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
 					// Make the chained tweens start exactly at the time they should,
@@ -440,6 +468,9 @@ export class Tween<T extends UnknownProps> {
 				}
 
 				this._isPlaying = false
+				if (this._onCompleteCallback) {
+					this._onCompleteCallback(this._object)
+				}
 
 				return false
 			}

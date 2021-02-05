@@ -30,7 +30,8 @@ export default class SuperGame {
   }
 
   BulletShoot() {
-    const tween = new Tween(this.player).delay(0.3).onComplete(() => {
+    const tween = new Tween(this.player).to({}, 0.3).onComplete(() => {
+      console.log("执行拉拉");
       this.shootOneBullet();
       tween.start();
     }).start();
@@ -40,6 +41,7 @@ export default class SuperGame {
     const gameOverNode = new Entity();
     const lab = gameOverNode.addComponent(Text);
     this.root.addChild(gameOverNode);
+    lab.align = TextAlignType.center;
     lab.textSize = 40;
     lab.lineHeight = 40;
     gameOverNode.transform.color = Color.BLACK;
@@ -53,7 +55,7 @@ export default class SuperGame {
   initEnemy() {
     const enemy = this.getAscIIModel(enemyModel);
     this.root.addChild(enemy);
-    enemy.transform.setPosition(0, -320); // console.log("enemy大小",enemy.getContentSize());
+    enemy.transform.setPosition(0, 320); // console.log("enemy大小",enemy.getContentSize());
 
     let hp = 10;
     const hpNode = new Entity();
@@ -85,21 +87,22 @@ export default class SuperGame {
 
   initPlayer() {
     const player = this.getAscIIModel(playerModel);
+    player.name = "player";
     console.log("player初始化");
     this.root.addChild(player);
     player.transform.scaleY = -1;
     console.log("root", this.root);
-    player.transform.setPosition(0, 350);
+    player.transform.setPosition(0, -350);
     console.log("player设置坐标后", player.transform.getRect());
     const playerTouchCtl = new TouchController(player);
 
     playerTouchCtl.startEvent = () => {
-      player.startPoint = player.transform.position;
+      player.startPoint = new Vec3(player.transform.position);
     };
 
     playerTouchCtl.moveEvent = vecadd => {
       const startPoint = player.startPoint;
-      player.transform.setPosition(startPoint.x + vecadd.x, startPoint.y - vecadd.y);
+      player.transform.setPosition(startPoint.x + vecadd.x, startPoint.y + vecadd.y);
     };
 
     const collider = player.addComponent(SuperBoxCollider);
@@ -112,7 +115,7 @@ export default class SuperGame {
     this.root.addChild(bullet);
     const bulletStartPos = new Vec3(this.player.transform.x, this.player.transform.top);
     bullet.transform.setPosition(bulletStartPos);
-    const bulletFlyTween = new Tween(bullet);
+    const bulletFlyTween = new Tween(bullet.transform);
     bulletFlyTween.by({
       y: 300
     }, 1).onComplete(() => {
@@ -198,6 +201,7 @@ export class TouchController {
     // touchstart 当手指触摸到屏幕时
     this.target.listen(Entity.EventType.MOUSE_DOWN, event => {
       if (!this.isAllowTouch) return;
+      console.log("mousedown执行了");
       this.startPoint = event.getLocation();
       console.log("startPoint change", this.startPoint);
       this.startEvent();

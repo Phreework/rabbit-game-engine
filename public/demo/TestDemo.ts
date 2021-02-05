@@ -48,7 +48,7 @@ export class TestDemo {
         const world = new World("demo1");
         world.init = () => {
             const entity = new Entity('root');
-            entity.transform.setPosition(Rabbit.Instance.winSize.w / 2, Rabbit.Instance.winSize.h / 2);
+            // entity.transform.setPosition(Rabbit.Instance.winSize.w / 2, -Rabbit.Instance.winSize.h / 2);
             entity.addComponent(rEngine.Canvas);
             const text = entity.addComponent(Text);
             text.setAlign(Text.TextAlignType.center);

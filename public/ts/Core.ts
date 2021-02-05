@@ -81,11 +81,21 @@ export enum KeyType {
 }
 export class RabbitMouseEvent {
     constructor(e: MouseEvent) {
-        this.x = e.x;
-        this.y = e.y;
+        console.log("mouseevent", e);
+        this.x = e.offsetX;
+        this.y = -e.offsetY;
+        this.offsetX = e.offsetX;
+        this.offsetY = -e.offsetY;
+        this.screenX = e.screenX;
+        this.screenY = -e.screenY;
     }
     x: number;
     y: number;
+    screenX: number;
+    screenY: number;
+    offsetX: number;
+    offsetY: number;
+    mouseEvent: MouseEvent;
     getLocation() {
         return new Vec2(this.x, this.y);
     }
@@ -675,9 +685,7 @@ export class EventSystem {
 
         //可能开销比较大？
         for (let j = 0; j < preDestroys.length; ++j) {
-            for (let i = 0; i < entities.length; ++i) {
-                if (entities[i] == preDestroys[j]) entities.splice(i, 1);
-            }
+            EngineTools.deleteItemFromList(preDestroys[j], entities);
         }
         Rabbit.Instance.world.preDestroys = [];
     }
@@ -761,6 +769,8 @@ export class TweenSystem {
         const deleteTweens: Tween<any>[] = [];
         for (let i = tweens.length - 1; i >= 0; --i) {
             const tween: Tween<any> = tweens[i];
+            if (!tween.target || tween.target.hasDestroyed) deleteTweens.push(tween);
+
             if (tween.isPlaying()) tween.update(Rabbit.Instance.time);
             else deleteTweens.push(tween);
         }
@@ -975,10 +985,21 @@ export class Vec3 {
     set z(z: number) {
         this._z = z;
     }
-    constructor(x?: number, y?: number, z?: number) {
-        this.x = x ? x : 0;
-        this.y = y ? y : 0;
-        this.z = z ? z : 0;
+    constructor(vec: Vec3);
+    constructor();
+    constructor(x: number);
+    constructor(x: number, y: number);
+    constructor(x: number, y: number, z: number);
+    constructor(x?: number | Vec3, y?: number, z?: number) {
+        if (typeof x == "object") {
+            this.x = x.x;
+            this.y = x.y;
+            this.z = x.z;
+        } else {
+            this.x = x ? x : 0;
+            this.y = y ? y : 0;
+            this.z = z ? z : 0;
+        }
     }
 }
 
@@ -999,6 +1020,13 @@ export class TransformChangeSign {
 }
 @rClass
 export class Transform extends Component {
+    _setRoot(canvas: Canvas) {
+        this.width = canvas.resolution.width;
+        this.height = canvas.resolution.height;
+        this._worldPosition = new Vec3(canvas.resolution.width / 2, -canvas.resolution.height / 2);
+        this._position = new Vec3(0, 0);
+        this.updateRect();
+    }
 
     changeSign: TransformChangeSign = new TransformChangeSign();
     /**
@@ -1515,12 +1543,11 @@ export class Transform extends Component {
         this._worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
         this._worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
         this._worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
-        if (this.entity) {
-
-            console.log("parentPosX", this.parent && this.parent.worldPosition.x);
-            console.log("localX", this.x);
-            console.log(this.entity.name, this._worldPosition.x);
-        }
+        // if (this.entity) {
+        // console.log("parentPosX", this.parent && this.parent.worldPosition.x);
+        // console.log("localX", this.x);
+        // console.log(this.entity.name, this._worldPosition.x);
+        // }
         if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
         this.updateRect();
         this.updateChildren();
@@ -1592,6 +1619,13 @@ export class Entity extends RabObject {
      * 实体是否激活
      */
     private _active: boolean = true;
+    /**
+     * 是否已执行销毁
+     */
+    _hasDestroyed: boolean = false;
+    get hasDestroyed() {
+        return this._hasDestroyed;
+    }
     get active() {
         return this._active;
     }
@@ -1765,7 +1799,12 @@ export class Entity extends RabObject {
      * 摧毁自己
      */
     destroy() {
+        this.parent = null;
         this.world.destroyEntity(this);
+        this.children.forEach((child) => {
+            child.destroy();
+        })
+        this._hasDestroyed = true;
     }
 
     /**
@@ -2204,7 +2243,14 @@ export class Text extends GraphicComponent {
     }
     font: string;
     colour: string;
-    textSize: number;
+    _textSize: number;
+    get textSize() {
+        return this._textSize;
+    }
+    set textSize(value) {
+        this._textSize = value;
+        this.updateSize();
+    }
     align: TextAlignType;
 
     /**
@@ -2216,7 +2262,7 @@ export class Text extends GraphicComponent {
         super();
         // this.x = x || 0;
         // this.y = y || 0;
-        this.text = text || "";
+        this._text = text || "";
         this.font = font || "sans";
         this.colour = colour || "white";
         this.textSize = size || 14;
@@ -2266,23 +2312,23 @@ export class Text extends GraphicComponent {
         const selfAngle: number = transform.worldAngle * Math.PI / 180;
 
 
-        ctx.translate(transform.worldX, transform.worldY);
+        ctx.translate(transform.worldX, -transform.worldY);
         ctx.rotate(selfAngle);
         ctx.scale(transform.scaleX, transform.scaleY);
         /**
          * @todo 放大后是否需要对translate做处理？
          */
-        ctx.translate(-transform.worldX, -transform.worldY);
+        ctx.translate(-transform.worldX, transform.worldY);
 
 
         if (transform.parent) {
             const parentAngle = transform.parent.worldAngle * Math.PI / 180;
-            ctx.translate(transform.parent.worldX, transform.parent.worldY);
+            ctx.translate(transform.parent.worldX, -transform.parent.worldY);
             ctx.scale(transform.worldScaleX, transform.worldScaleY);
             ctx.rotate(parentAngle);
-            this.renderText(this.text, transform.x, transform.y);
+            this.renderText(this.text, transform.x, -transform.y);
         } else {
-            ctx.translate(transform.worldX, transform.worldY);
+            ctx.translate(transform.worldX, -transform.worldY);
             ctx.scale(transform.worldScaleX, transform.worldScaleY);
             this.renderText(this.text, 0, 0);
         }
@@ -2294,7 +2340,15 @@ export class Text extends GraphicComponent {
             const rect = transform.getRect();
             ctx.lineWidth = 2;
             ctx.strokeStyle = "red";
-            ctx.strokeRect(rect.x - rect.width / 2, rect.y - rect.height / 2, rect.width, rect.height);
+            ctx.strokeRect(rect.x - rect.width / 2, -rect.y - rect.height / 2, rect.width, rect.height);
+            // console.log("name: ",transform.entity.name);
+            // console.log("x: ",rect.x - rect.width / 2)
+            // console.log("y: ",-rect.y - rect.height / 2)
+            // console.log("w: ",rect.width)
+            // console.log("h: ",rect.height)
+            // console.log("w: ",this.w)
+            // console.log("h: ",this.h)
+            // console.log("size: ",this.textSize)
             ctx.restore();
         }
     }
@@ -2311,6 +2365,11 @@ export class Text extends GraphicComponent {
 
     }
     updateSize() {
+        const ctx = Rabbit.Instance.context;
+        ctx.save();
+        ctx.textBaseline = 'top';
+        ctx.textAlign = this.align;
+        ctx.font = this.textSize + "px " + this.font;
         this.h = 0;
         this.w = 0;
         const textArr: string[] = this.text.split("\n");
@@ -2323,6 +2382,7 @@ export class Text extends GraphicComponent {
         if (this.entity) {
             this.entity.transform.size = new Vec2(this.w, this.h);
         }
+        ctx.restore();
     }
     update(time) {
 
@@ -2454,6 +2514,8 @@ export class Rect extends RabObject {
     }
 
     collidePoint(point: number[]) {
+        console.log("point", point);
+        console.log("rect", this);
         return (
             point[0] >= this.x - this.w / 2 &&
             point[0] < this.x + this.w / 2 &&
@@ -2463,13 +2525,13 @@ export class Rect extends RabObject {
     }
 
     collideRect(rect) {
-        if (this.x > rect.x + rect.w)
+        if (this.x > rect.x + rect.w / 2 + this.w / 2)
             return false;
-        if (rect.x > this.x + this.w)
+        if (rect.x > this.x + this.w / 2 + rect.w / 2)
             return false;
-        if (this.y > rect.y + rect.h)
+        if (this.y > rect.y + rect.h / 2 + this.h / 2)
             return false;
-        if (rect.y > this.y + this.h)
+        if (rect.y > this.y + this.h / 2 + rect.h / 2)
             return false;
         return true;
     }
@@ -2701,8 +2763,7 @@ export class Canvas extends Component {
         Debug.log("Canvas height: ", this.resolution.height)
     }
     onLoad() {
-        this.entity.transform.width = this.resolution.width;
-        this.entity.transform.height = this.resolution.height;
+        this.entity.transform._setRoot(this);
     }
 }
 @rClass

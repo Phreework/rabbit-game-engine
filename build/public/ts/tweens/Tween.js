@@ -9,6 +9,14 @@
 import Easing from './Easing.js';
 import Interpolation from './Interpolation.js';
 import { Rabbit } from '../Core.js';
+var TweenHistoryType;
+
+(function (TweenHistoryType) {
+  TweenHistoryType["to"] = "to";
+  TweenHistoryType["by"] = "by";
+  TweenHistoryType["onComplete"] = "onComplete";
+})(TweenHistoryType || (TweenHistoryType = {}));
+
 export class TweenSequence {
   static nextId() {
     return TweenSequence._nextId++;
@@ -24,6 +32,10 @@ let now = () => {
 export class Tween {
   get startTime() {
     return this._startTime;
+  }
+
+  get target() {
+    return this._object;
   }
 
   // constructor(private _object: T, private _group: Group | false = mainGroup) {}
@@ -54,6 +66,8 @@ export class Tween {
     this._onStopCallback = void 0;
     this._id = TweenSequence.nextId();
     this._isChainStopped = false;
+    this._historys = [];
+    this.isAddToRabbit = false;
     this._goToEnd = false;
   }
 
@@ -70,6 +84,15 @@ export class Tween {
   }
 
   to(properties, duration) {
+    this._historys.push({
+      type: TweenHistoryType.to,
+      args: [properties, duration]
+    });
+
+    return this;
+  }
+
+  _to(properties, duration) {
     // TODO? restore this, then update the 07_dynamic_to example to set fox
     // tween's to on each update. That way the behavior is opt-in (there's
     // currently no opt-out).
@@ -84,11 +107,18 @@ export class Tween {
   }
 
   by(properties, duration) {
+    this._historys.push({
+      type: TweenHistoryType.by,
+      args: [properties, duration]
+    });
+
+    return this;
+  }
+
+  _by(properties, duration) {
     this._valuesEnd = Object.create(properties);
 
     for (const str in properties) {
-      console.log("valuesend", this._valuesEnd);
-      console.log("properties", properties);
       this._valuesEnd[str] = this._object[str] + properties[str];
     }
 
@@ -107,7 +137,15 @@ export class Tween {
   start() {
     if (this._isPlaying) {
       return this;
-    } // eslint-disable-next-line
+    }
+
+    this._valuesStart = {};
+    this._valuesEnd = {};
+    this._valuesStartRepeat = {};
+
+    this._historys.forEach(item => {
+      this["_" + item.type].apply(this, item.args);
+    }); // eslint-disable-next-line
 
 
     this._repeat = this._initialRepeat;
@@ -133,7 +171,11 @@ export class Tween {
 
     this._setupProperties(this._object, this._valuesStart, this._valuesEnd, this._valuesStartRepeat);
 
-    Rabbit.Instance.world.tweenSystem.addTween(this);
+    if (!this.isAddToRabbit) {
+      this.isAddToRabbit = true;
+      Rabbit.Instance.world.tweenSystem.addTween(this);
+    }
+
     return this;
   }
 
@@ -267,7 +309,7 @@ export class Tween {
 
 
   delay(amount = 0) {
-    this._delayTime = amount;
+    this._delayTime = amount * 1000;
     return this;
   }
 
@@ -319,6 +361,15 @@ export class Tween {
   }
 
   onComplete(callback) {
+    this._historys.push({
+      type: TweenHistoryType.onComplete,
+      args: [callback]
+    });
+
+    return this;
+  }
+
+  _onComplete(callback) {
     this._onCompleteCallback = callback;
     return this;
   }
@@ -335,6 +386,7 @@ export class Tween {
    */
   update(time = now()) {
     if (this._isPaused) return true;
+    if (!this.isPlaying()) return true;
     let property;
     let elapsed;
     const endTime = this._startTime + this._duration;
@@ -406,10 +458,6 @@ export class Tween {
 
         return true;
       } else {
-        if (this._onCompleteCallback) {
-          this._onCompleteCallback(this._object);
-        }
-
         for (let i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
           // Make the chained tweens start exactly at the time they should,
           // even if the `update()` method was called way past the duration of the tween
@@ -417,6 +465,11 @@ export class Tween {
         }
 
         this._isPlaying = false;
+
+        if (this._onCompleteCallback) {
+          this._onCompleteCallback(this._object);
+        }
+
         return false;
       }
     }
