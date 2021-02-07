@@ -15,7 +15,7 @@ var port = 80;
 httpServer.listen(port, function() {
     console.log(`app is running at port:${port}`);
     console.log(`url: http://localhost:${port}`);
-    cp.exec(`explorer http://localhost:${port}`, function () {
+    cp.exec(`explorer http://localhost:${port}/build/test.html`, function () {
     });
 });
 
