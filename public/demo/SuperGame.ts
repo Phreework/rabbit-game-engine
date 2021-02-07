@@ -1,6 +1,6 @@
-import { Canvas, Color, Component, Entity, Rabbit, Rect, Text, TextAlignType, Vec2, Vec3 } from "../ts/Core.js";
-import { NodePool as EntityPool } from "../ts/NodePool.js";
-import Tween from "../ts/tweens/Tween.js";
+import { Canvas, Color, Component, Entity, Rabbit, Rect, Text, TextAlignType, Vec2, Vec3 } from "../ts/Core";
+import { NodePool as EntityPool } from "../ts/NodePool";
+import Tween from "../ts/tweens/Tween";
 
 const playerModel: string =
     "                                 __                                 " + "\n" +

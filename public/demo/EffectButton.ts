@@ -1,4 +1,4 @@
-import { AudioSystem, Entity, EventType, Rabbit, RabbitMouseEvent, RabImage, Rect, Sfx, World } from "../ts/Core.js";
+import { AudioSystem, Entity, EventType, Rabbit, RabbitMouseEvent, RabImage, Rect, Sfx, World } from "../ts/Core";
 
 export function main(): World {
     const world = new World("demo2");

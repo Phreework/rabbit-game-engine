@@ -1,5 +1,4 @@
-import { join } from "path";
-import { Component, RabImage, World, KeyType, Entity } from "../ts/Core.js";
+import { Component, RabImage, World, KeyType, Entity } from "../ts/Core";
 
 class Robot extends Component {
     image: RabImage;

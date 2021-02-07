@@ -1,4 +1,4 @@
-import * as rabEngine from "./Core.js";
+import * as rabEngine from "./Core";
 
 export function rClass(params: any) {
     // console.log("logClass",params);

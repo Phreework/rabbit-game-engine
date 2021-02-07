@@ -1,11 +1,11 @@
-import * as rEngine from "../ts/Core.js";
-import { Entity, Rabbit, KeyType, Text, World, Component } from "../ts/Core.js";
-import Tween from "../ts/tweens/Tween.js";
-import { main as demo2 } from "./EffectButton.js";
-import { main as demo3 } from "./IsoGame.js";
-import { main as demo4 } from "./LightItUp.js";
-import { main as demo5 } from "./QuestGame.js";
-import SuperGame from "./SuperGame.js";
+import * as rEngine from "../ts/Core";
+import { Entity, Rabbit, KeyType, Text, World, Component } from "../ts/Core";
+import Tween from "../ts/tweens/Tween";
+import { main as demo2 } from "./EffectButton";
+import { main as demo3 } from "./IsoGame";
+import { main as demo4 } from "./LightItUp";
+import { main as demo5 } from "./QuestGame";
+import SuperGame from "./SuperGame";
 /**
  * 引擎完整功能测试Demo
  * @author PhreeSoda
@@ -98,3 +98,4 @@ class GlobalControl extends Component {
         this.entity.listen(rEngine.EventType.KEY_DOWN, this.keyDown, this);
     }
 }
+TestDemo.main();

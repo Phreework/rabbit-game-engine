@@ -7,11 +7,11 @@
  * Thank you all, you're awesome!
  */
 
-import Easing from './Easing.js'
-import Interpolation from './Interpolation.js'
-import type { EasingFunction } from './Easing.js'
-import type { InterpolationFunction } from './Interpolation.js'
-import { Rabbit } from '../Core.js'
+import Easing from './Easing'
+import Interpolation from './Interpolation'
+import type { EasingFunction } from './Easing'
+import type { InterpolationFunction } from './Interpolation'
+import { Rabbit } from '../Core'
 enum TweenHistoryType {
 	to = "to",
 	by = "by",

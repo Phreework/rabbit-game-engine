@@ -12,10 +12,10 @@
  * 描述：rabbit 引擎是一个极易上手且功能强大的H5游戏引擎，具有 实体-组件-管线 的特色开发架构。
  * --------------------------------------------------------
 */
-
-import { rClass } from "../ts/Decorator.js";
-import { Debug } from "./Debug.js";
-import Tween from "./tweens/Tween.js";
+// import _ from 'lodash';
+import { rClass } from "../ts/Decorator";
+import { Debug } from "./Debug";
+import Tween from "./tweens/Tween";
 
 /**
  * 记录了所有Engine Class的map
@@ -25,7 +25,7 @@ export const rabbitClass = {};
 /**
  * 记录当前引擎版本
  */
-export const rabbitVersion: string = "0.2";
+export const rabbitVersion: string = "0.3";
 
 /**
  * ###en
@@ -79,6 +79,10 @@ export enum KeyType {
 
     SPACE = 32
 }
+/**
+ * Rabbit鼠标事件
+ */
+@rClass
 export class RabbitMouseEvent {
     constructor(e: MouseEvent) {
         console.log("mouseevent", e);
@@ -100,6 +104,7 @@ export class RabbitMouseEvent {
         return new Vec2(this.x, this.y);
     }
 }
+
 /**
  * ###en
  * 
@@ -246,7 +251,17 @@ export class Rabbit {
      * debugMode 调试模式
      */
     debugMode: boolean = false;
+
+    /**
+     * debug工具
+     */
     debugTools: DebugTools;
+
+    /**
+     * 鼠标是否按下
+     */
+    isMouseDown: boolean = false;
+
     /**
      * Rabbit运行环境构造器函数
      */
@@ -258,6 +273,7 @@ export class Rabbit {
         this.compSystem = new CompSystem();
         this.eventSystem = new EventSystem();
         this.tweenSystem = new TweenSystem();
+        this.debugTools = new DebugTools();
     }
 
     /**
@@ -410,10 +426,6 @@ export class Rabbit {
     }
 
     /**
-     * 鼠标是否按下
-     */
-    isMouseDown: boolean = false;
-    /**
      * 鼠标下键按下
      */
     mouseDown(e: MouseEvent): void {
@@ -421,6 +433,7 @@ export class Rabbit {
         this.world.mouseDown(e);
         this.mouse.pressed = true;
     }
+
     /**
      * 鼠标下键按下
      * @param event
@@ -430,6 +443,7 @@ export class Rabbit {
         this.world.mouseUp(e);
         this.mouse.pressed = true;
     }
+
     /**
      * 鼠标移动
      * @param event 
@@ -551,6 +565,7 @@ export class Rabbit {
             this._nextWorld = null;
         }
     }
+
     /**
      * 发送事件广播
      */
@@ -563,7 +578,8 @@ export let rabbit: Rabbit = null;
 
 
 /**
- * @class 管理所有的实体
+ * @class 实体系统 - 包含管理所有的实体的方法
+ * @instance
  */
 @rClass
 export class EntitySystem {
@@ -621,6 +637,7 @@ export class EntitySystem {
         e.onDestroy();
         Rabbit.Instance.world.preDestroys.push(e);
     }
+
     /**
      * 在该帧结束时移除该实体
      * @param e 要移除的实体
@@ -631,26 +648,52 @@ export class EntitySystem {
         Rabbit.Instance.world.removes.push(e);
     }
 }
+
 /**
- * 管理所有的组件
- * 单例
+ * @class 管理所有的组件
+ * @instance
  */
 @rClass
 export class CompSystem {
-
+    /**
+     * 唯一实例
+     */
     static Instance: CompSystem;
 
+    /**
+     * @constructor
+     */
     constructor() {
         CompSystem.Instance = this;
     }
 }
+
 /**
- * 管理所有的事件
- * 单例
+ * @class 管理所有事件的系统
+ * @instance
  */
 @rClass
 export class EventSystem {
 
+    /**
+     * 唯一实例
+     */
+    static Instance: EventSystem;
+
+    /**
+     * 构造器函数
+     */
+    constructor() {
+        EventSystem.Instance = this;
+    }
+
+    /**
+     * @description 在htmlcanvas以及document上注册设备事件监听
+     * 
+     * 调用：在Rabbit的init时调用
+     * 
+     * 注册的事件：onmousedown, onmousemove, onmouseup, onmouseout, onkeydown, onkeyup
+     */
     initEventRegister() {
         Rabbit.Instance.htmlCanvas.onmousedown = (e) => { Rabbit.Instance._canvasMouseDown(e); };
         document.onkeydown = (e) => { Rabbit.Instance.keyDown(e); };
@@ -660,12 +703,9 @@ export class EventSystem {
         Rabbit.Instance.htmlCanvas.onmouseout = (e) => { Rabbit.Instance.mouseOut(e); };
     }
 
-    static Instance: EventSystem;
-
-    constructor() {
-        EventSystem.Instance = this;
-    }
-
+    /**
+     * @description 事件系统初始化函数，调用所有实体的start函数
+     */
     start() {
         const entities = Rabbit.Instance.world.entities;
         for (let i = 0; i < entities.length; ++i) {
@@ -674,9 +714,13 @@ export class EventSystem {
         }
     }
 
+    /**
+     * @description 事件系统更新函数，派发所有实体的update函数
+     * @param dtime 当前帧与上一帧的间隔时间
+     */
     update(dtime: number) {
-        const entities = Rabbit.Instance.world.entities;
-        const preDestroys = Rabbit.Instance.world.preDestroys;
+        const world = Rabbit.Instance.world;
+        const entities = world.entities;
         for (let i = 0; i < entities.length; ++i) {
             const entity = entities[i];
             if (!entity.active) continue;
@@ -684,41 +728,77 @@ export class EventSystem {
         }
 
         //可能开销比较大？
+        const preDestroys = world.preDestroys;
+        if (preDestroys.length == 0) return;
         for (let j = 0; j < preDestroys.length; ++j) {
             EngineTools.deleteItemFromList(preDestroys[j], entities);
         }
-        Rabbit.Instance.world.preDestroys = [];
+        world.preDestroys = [];
     }
 
+    /**
+     * @description 键盘按下事件触发 
+     * @param key 按下的按键code 
+     */
     keyDown(key: number) {
         this.sendMessage(new EventDisPatcher("keyDown", key));
     }
 
+    /**
+     * @description 键盘按住事件触发 
+     * @param key 按下的按键code 
+     */
     keyPress(key: number) {
         this.sendMessage(new EventDisPatcher("keyPress", key));
     }
 
+    /**
+     * @description 键盘抬起事件触发 
+     * @param key 松开的按键code 
+     */
     keyUp(key: number) {
         this.sendMessage(new EventDisPatcher("keyUp", key));
     }
 
+    /**
+     * @description 鼠标按下事件触发 
+     * @param event Rabbit鼠标按下事件
+     */
     mouseDown(event: RabbitMouseEvent) {
         console.log("mouseEvent", event);
         this.sendMessage(new EventDisPatcher("mouseDown", event));
     }
 
+    /**
+     * @description 鼠标按住移动事件触发 
+     * @param event Rabbit鼠标按住移动事件
+     */
     mousePress(event: RabbitMouseEvent) {
         this.sendMessage(new EventDisPatcher("mousePress", event));
     }
 
+    /**
+     * @description 鼠标抬起事件触发 
+     * @param event Rabbit鼠标抬起事件
+     */
     mouseUp(event: RabbitMouseEvent) {
         this.sendMessage(new EventDisPatcher("mouseUp", event));
     }
 
+    /**
+     * @description 鼠标移出事件触发 
+     * @param event Rabbit鼠标移出事件
+     */
     mouseOut(event: RabbitMouseEvent) {
         this.sendMessage(new EventDisPatcher("mouseOut", event));
     }
 
+    /**
+     * @description 移除监听器函数
+     * @param event 要移除的事件监听 
+     * @param func （可选） 指定回调函数
+     * @param bind （可选） 指定绑定对象
+     */
     removeListener(event: string, func?: Function, bind?: Object) {
         const listeners = Rabbit.Instance.world.eventListeners;
         const deleteListeners: EventListener[] = [];
@@ -743,10 +823,18 @@ export class EventSystem {
         });
     }
 
+    /**
+     * @description 增加事件监听器函数
+     * @param listener 监听器对象
+     */
     addListener(listener: EventListener) {
         Rabbit.Instance.world.eventListeners.push(listener);
     }
 
+    /**
+     * 触发消息广播的函数
+     * @param dispatcher 消息触发器
+     */
     sendMessage(dispatcher: EventDisPatcher) {
         const listeners = Rabbit.Instance.world.eventListeners;
         const deleteListeners: EventListener[] = [];
@@ -764,6 +852,11 @@ export class EventSystem {
 
 }
 export class TweenSystem {
+    static Instance: TweenSystem;
+
+    constructor() {
+        TweenSystem.Instance = this;
+    }
     update(dtime: number) {
         const tweens = Rabbit.Instance.world.tweens;
         const deleteTweens: Tween<any>[] = [];
@@ -780,11 +873,6 @@ export class TweenSystem {
     }
     addTween(tween: Tween<any>) {
         Rabbit.Instance.world.tweens.push(tween);
-    }
-    static Instance: TweenSystem;
-
-    constructor() {
-        TweenSystem.Instance = this;
     }
 }
 export class EventListener {
@@ -813,9 +901,9 @@ export class EventListener {
                 if (this.entity.transform.getRect().collidePoint(mouse)) {
                     (this.entity as any)._isMouseDown = true;
                     this.entity.listenOnce(EventType.MOUSE_UP, () => (this.entity as any)._isMouseDown = false);
-                    console.log("点击成功");
+                    Debug.log("点击成功");
                 } else {
-                    console.log("点击失败");
+                    Debug.log("点击失败");
                     return false;
                 }
             } else if (this.eventType == EventType.MOUSE_PRESS || this.eventType == EventType.MOUSE_UP || this.eventType == EventType.MOUSE_OUT) {
@@ -1540,15 +1628,20 @@ export class Transform extends Component {
      * @todo 感觉parent为空的时候对坐标的处理还有些问题
      */
     updateWorldPosition() {
-        this._worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
-        this._worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
-        this._worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+
         // if (this.entity) {
         // console.log("parentPosX", this.parent && this.parent.worldPosition.x);
         // console.log("localX", this.x);
         // console.log(this.entity.name, this._worldPosition.x);
         // }
-        if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+        this._worldPosition.x = this.parent ? this.parent.worldPosition.x + this.x : this.x;
+        this._worldPosition.y = this.parent ? this.parent.worldPosition.y + this.y : this.y;
+        this._worldPosition.z = this.parent ? this.parent.worldPosition.z + this.z : this.z;
+        try {
+            if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+        } catch (e) {
+            console.log(e);
+        }
         this.updateRect();
         this.updateChildren();
     }
@@ -1556,7 +1649,11 @@ export class Transform extends Component {
         this._position.x = this.parent ? (this.worldPosition.x - this.parent.worldPosition.x) : this.worldX;
         this._position.y = this.parent ? (this.worldPosition.y - this.parent.worldPosition.y) : this.worldY;
         this._position.z = this.parent ? this.worldPosition.z - this.parent.worldPosition.z : this.worldZ;
-        if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+        try {
+            if (this.entity) Rabbit.Instance.world.eventSystem.sendMessage(new EventDisPatcher(EventType.POSITION_CHANGED, this.entity));
+        } catch (e) {
+            console.log(e);
+        }
         this.updateRect();
         this.updateChildren();
     }
@@ -1743,7 +1840,7 @@ export class Entity extends RabObject {
             if (newCom["draw"]) {
                 this.graphic = newCom as GraphicComponent;
             }
-            if (Rabbit.Instance.isRabbitRun) {
+            if (Rabbit.Instance && Rabbit.Instance.isRabbitRun) {
                 newCom._onLoad();
             }
         }
@@ -1778,13 +1875,17 @@ export class Entity extends RabObject {
      * @param child 
      */
     addChild(child: Entity) {
-        if (!child) return Debug.warn("要添加的子节点不存在");
-        if (child.parent) child.parent.removeChild(this);
-        child._parent = this;
-        // child.transform.parent = this.transform;
-        this.children.push(child);
-        this.world.add(child);
-        child.transform.updateWorldPosition();
+        try {
+            if (!child) return Debug.warn("要添加的子节点不存在");
+            if (child.parent) child.parent.removeChild(this);
+            child._parent = this;
+            // child.transform.parent = this.transform;
+            this.children.push(child);
+            this.world.add(child);
+            child.transform.updateWorldPosition();
+        } catch (e) {
+            console.log("world可能不存在", e);
+        }
     }
 
     /**
@@ -1799,19 +1900,27 @@ export class Entity extends RabObject {
      * 摧毁自己
      */
     destroy() {
-        this.parent = null;
-        this.world.destroyEntity(this);
-        this.children.forEach((child) => {
-            child.destroy();
-        })
-        this._hasDestroyed = true;
+        try {
+            this.parent = null;
+            this.world.destroyEntity(this);
+            this.children.forEach((child) => {
+                child.destroy();
+            })
+            this._hasDestroyed = true;
+        } catch (e) {
+            console.log("world可能不存在", e);
+        }
     }
 
     /**
      * 移除自己
      */
     remove() {
-        this.world.removeEntity(this);
+        try {
+            this.world.removeEntity(this);
+        } catch (e) {
+            console.log("world可能不存在", e);
+        }
     }
 
     /**

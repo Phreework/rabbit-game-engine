@@ -1,4 +1,4 @@
-import { Component, Entity, GraphicComponent, GraphicList, Rabbit, RabImage, World } from "../ts/Core.js";
+import { Component, Entity, GraphicComponent, GraphicList, Rabbit, RabImage, World } from "../ts/Core";
 
 const TILE_W = 64;
 const TILE_H = 32;

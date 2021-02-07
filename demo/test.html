@@ -32,8 +32,8 @@
 	</canvas>
 
 	<!-- <p>Made with <a href="https://github.com/Phreework/rabbit-game-engine">rabbit</a>.</p> -->
-	<script type="module">
-
+	<script type="module" src="../build/bundle.js">
+		import {TestDemo} from "../build/bundle.js"
 		// $(function () {
 		// 	var canvas = $('#rabbit-canvas');
 		// 	canvas.attr("width", $(window).get(0).innerWidth)
@@ -43,7 +43,7 @@
 		// 		canvas.attr("height", $(window).get(0).innerHeight)
 		// 	});
 		// });
-		import { TestDemo } from '../build/public/demo/TestDemo.js'
+		// import { TestDemo } from '../build/public/demo/TestDemo'
 		TestDemo.main();
 	</script>
 </body>

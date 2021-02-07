@@ -1,4 +1,4 @@
-import { Entity, Circle, SplashCanvas, Sfx, Rabbit, World, Component, AudioSystem, EventType, RabbitMouseEvent, Vec2 } from "../ts/Core.js";
+import { Entity, Circle, SplashCanvas, Sfx, Rabbit, World, Component, AudioSystem, EventType, RabbitMouseEvent, Vec2 } from "../ts/Core";
 class Light extends Component {
     gx: any;
     gy: any;

@@ -1,0 +1,12 @@
+{
+    "watch":["public"],
+    "ignore": [
+        "build"
+    ],
+    "script":"index.ts",
+    "events": {
+        "exit": "npm run build"
+    },
+    "ext":"ts js json",
+    "exec":"ts-node"
+}

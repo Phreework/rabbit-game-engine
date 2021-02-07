@@ -1,4 +1,4 @@
-import { Component, Entity } from "./Core.js";
+import { Component, Entity } from "./Core";
 
 type Constructor<T = {}> = new (...args: any[]) => T;
 
