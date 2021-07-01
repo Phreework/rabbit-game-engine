@@ -1,6 +1,8 @@
-import  * as rabEngine  from '../ts/Core.js'
+
 <Entity name="Canvas" Canvas x="0" y="0">
     <Entity name="node" x="0" y="0" Sprite="src:a,x:0,y:0"></Entity>
 </Entity>
+<script>
+import  * as rabEngine  from '../ts/Core.js'
 
-class 
+<script?

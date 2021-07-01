@@ -2408,6 +2408,7 @@ export class Text extends GraphicComponent {
     updateScale() {
     }
     draw() {
+        if (!this.entity)return;
         const ctx = Rabbit.Instance.context;
         const transform = this.entity.transform;
 
@@ -3113,16 +3114,34 @@ export class SplashCanvas extends GraphicComponent {
     }
 
     draw() {
-        Rabbit.Instance.context.save();
-        Rabbit.Instance.context.globalAlpha = this.alpha;
+        if (!this.entity)return;
+        const ctx = Rabbit.Instance.context;
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
 
         if (this.ignoreCamera)
-            Rabbit.Instance.context.translate(Math.floor(this.x), Math.floor(this.y));
+        ctx.translate(Math.floor(this.x), Math.floor(this.y));
         else
-            Rabbit.Instance.context.translate(Math.floor(this.x + Rabbit.Instance.camera.x), Math.floor(this.y + Rabbit.Instance.camera.y));
+        ctx.translate(Math.floor(this.x + Rabbit.Instance.camera.x), Math.floor(this.y + Rabbit.Instance.camera.y));
 
-        Rabbit.Instance.context.drawImage(this.canvas, 0, 0);
-        Rabbit.Instance.context.restore();
+        ctx.drawImage(this.canvas, 0, 0);
+        ctx.restore();
+        if (Rabbit.Instance.debugMode && this.entity) {
+            ctx.save();
+            const rect = this.entity.transform.getRect();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "red";
+            ctx.strokeRect(rect.x - rect.width / 2, -rect.y - rect.height / 2, rect.width, rect.height);
+            // console.log("name: ",transform.entity.name);
+            // console.log("x: ",rect.x - rect.width / 2)
+            // console.log("y: ",-rect.y - rect.height / 2)
+            // console.log("w: ",rect.width)
+            // console.log("h: ",rect.height)
+            // console.log("w: ",this.w)
+            // console.log("h: ",this.h)
+            // console.log("size: ",this.textSize)
+            ctx.restore();
+        }
     }
 
     update(dtime) {

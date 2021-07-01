@@ -82,6 +82,7 @@ export class TestDemo {
 
             // });
             setTimeout(() => {
+                if (rEngine.rabbit.world!=world)return;
                 const superGame = new SuperGame();
             }, 3000);
         }

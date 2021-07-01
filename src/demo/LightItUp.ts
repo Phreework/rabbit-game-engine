@@ -14,7 +14,7 @@ class Light extends Component {
         this.gy = gy;
         let x = gx * (radius * 2 + 1);
         let y = gy * (radius * 2 + 1);
-        this.entity.transform.setPosition(x+radius,y+radius);
+        this.entity.transform.setPosition(x + radius, y + radius);
         this.radius = radius;
         this.lit = true;
         this.board = board;
@@ -34,12 +34,10 @@ class Light extends Component {
         this.entity.transform.size = new Vec2(this.radius, this.radius);
     }
     onLoad() {
- 
+
         this.entity.listen(EventType.MOUSE_DOWN, (event: RabbitMouseEvent) => {
-            // console.log("点击棋子");
-            if (this.circle.collidePoint([event.x, event.y]))
-                this.board.light(this.gx, this.gy);
-        });
+            this.board.light(this.gx, this.gy);
+        }, this);
     }
 
     flip() {
@@ -47,10 +45,12 @@ class Light extends Component {
     }
 
     update(dtime) {
-        if (this.lit)
+        if (this.lit) {
             this.entity.graphic = this.light;
-        else
+        }
+        else {
             this.entity.graphic = this.dark;
+        }
     }
 }
 
@@ -64,6 +64,12 @@ class Board extends Component {
                 const lightEntity = new Entity();
                 const light = lightEntity.addComponent(Light);
                 light.init(x, y, 32, this);
+                lightEntity.transform.x = 32 + x * (32 * 2 + 1);
+                lightEntity.transform.y = -32 - (y * 32 * 2 + 1);
+                light.dark.entity = lightEntity;
+                light.light.entity = lightEntity;
+                lightEntity.transform.width = 32;
+                lightEntity.transform.height = 32;
                 this.lights.push(light);
                 Rabbit.Instance.world.add(lightEntity);
             }
@@ -73,6 +79,7 @@ class Board extends Component {
         }
     }
     light(gx, gy) {
+        console.log("处理", gx, gy);
         this.lights[gy * 5 + gx].flip();
         if (gx < 4)
             this.lights[gy * 5 + gx + 1].flip();
