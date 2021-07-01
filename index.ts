@@ -12,11 +12,17 @@ var httpServer = http.createServer(processRequest);
 var port = 80;
 
 //指定一个监听的接口
+let flag:boolean = false;
 httpServer.listen(port, function() {
     console.log(`app is running at port:${port}`);
     console.log(`url: http://localhost:${port}`);
-    cp.exec(`explorer http://localhost:${port}/build/test.html`, function () {
-    });
+    if (!flag){
+        cp.exec(`explorer http://localhost:${port}/build/test.html`, function () {
+        });
+        flag = true;
+    }else{
+        console.log("热更新完毕");
+    }
 });
 
 //响应请求的函数

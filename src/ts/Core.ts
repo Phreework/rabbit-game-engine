@@ -2764,7 +2764,7 @@ export class GraphicList extends GraphicComponent {
     }
 }
 @rClass
-export class RabImage extends GraphicComponent {
+export class Sprite extends GraphicComponent {
 
     _x: number;
     _y: number;
@@ -2775,12 +2775,19 @@ export class RabImage extends GraphicComponent {
     }
     set imageUrl(value: string) {
         this._imageUrl = value;
-        this.image = Rabbit.loadImage(value);
-        this.w = this.image.width;
-        this.h = this.image.height;
+        this._image = Rabbit.loadImage(value);
+        this.w = this._image.width;
+        this.h = this._image.height;
     }
 
-    image: HTMLImageElement;
+    _image: HTMLImageElement;
+    set image(img:HTMLImageElement){
+        this._image = img;
+        this.updateSize();
+    }
+    get image(){
+        return this._image;
+    }
     ignoreCamera: boolean = false;
     constructor(x?: number, y?: number, image?: string) {
         super();
@@ -2795,29 +2802,45 @@ export class RabImage extends GraphicComponent {
     async setImageAsync(url: string) {
         this._imageUrl = url;
         this.image = await Rabbit.loadImageAsync(url);
-        this.w = this.image.width;
-        this.h = this.image.height;
     }
 
     draw() {
-        if (!this.image || !(this.image as any).valid) return;
+        if (!this._image || !(this._image as any).valid) return;
 
 
-        Rabbit.Instance.context.save();
-        Rabbit.Instance.context.globalAlpha = this.alpha;
+        const ctx = Rabbit.Instance.context;
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
         if (this.ignoreCamera)
-            Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
+        ctx.translate(Math.floor(this._x-this.w/2), -Math.floor(this._y+this.h/2));
         else
-            Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
+        ctx.translate(Math.floor(this._x -this.w/2 + Rabbit.Instance.camera.x), -Math.floor(this._y +this.h/2+ Rabbit.Instance.camera.y));
 
         // Debug.log("camera",Rabbit.Instance.camera);
-        Rabbit.Instance.context.drawImage(this.image, 0, 0);
-        Rabbit.Instance.context.globalAlpha = 1;
-        Rabbit.Instance.context.restore();
+        ctx.drawImage(this._image, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        if (Rabbit.Instance.debugMode &&this.entity) {
+            ctx.save();
+            const rect = this.entity.transform.getRect();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "red";
+            ctx.strokeRect(rect.x - rect.width / 2, -rect.y - rect.height / 2, rect.width, rect.height);
+            // console.log("name: ",transform.entity.name);
+            // console.log("x: ",rect.x - rect.width / 2)
+            // console.log("y: ",-rect.y - rect.height / 2)
+            // console.log("w: ",rect.width)
+            // console.log("h: ",rect.height)
+            // console.log("w: ",this.w)
+            // console.log("h: ",this.h)
+            // console.log("size: ",this.textSize)
+            ctx.restore();
+        }
     }
 
     update(dtime) {
-        if (!this.image) return;
+        if (!this._image) return;
         Rabbit.Instance.context.save();
         if (this.ignoreCamera)
             Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
@@ -2829,8 +2852,16 @@ export class RabImage extends GraphicComponent {
         this.y = this.entity.transform.worldY;
         this._x = this.x;
         this._y = this.y;
-        this.w = this.image.width;
-        this.h = this.image.height;
+    }
+
+    updateSize(){
+        console.log("updateSize");
+        if (this.entity){
+            this.w = this.image.width;
+            this.h = this.image.height;
+            this.entity.transform.size = new Vec2(this.w,this.h);
+            Debug.log("size",this.entity.transform.size);
+        }
     }
 }
 
@@ -2877,7 +2908,7 @@ export class Canvas extends Component {
     }
 }
 @rClass
-export class Sprite extends GraphicComponent {
+export class Animation extends GraphicComponent {
     private _x: any;
     private _y: any;
     origin: number[];

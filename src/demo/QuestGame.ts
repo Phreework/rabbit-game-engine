@@ -1,11 +1,11 @@
-import { Component, RabImage, World, KeyType, Entity } from "../ts/Core";
+import { Component, Sprite, World, KeyType, Entity } from "../ts/Core";
 
 class Robot extends Component {
-    image: RabImage;
+    image: Sprite;
     init(x, y) {
         this.entity.transform.x = x;
         this.entity.transform.y = y;
-        this.image = this.entity.addComponent(RabImage);
+        this.image = this.entity.addComponent(Sprite);
         this.image.imageUrl = "graphics/robot.png";
     }
 }

@@ -1,4 +1,4 @@
-import { Component, Entity, GraphicComponent, GraphicList, Rabbit, RabImage, World } from "../ts/Core";
+import { Component, Entity, GraphicComponent, GraphicList, Rabbit, Sprite, World } from "../ts/Core";
 
 const TILE_W = 64;
 const TILE_H = 32;
@@ -81,7 +81,7 @@ class Town extends Component {
 
 		this.entity.transform.x = (gx - gy) * TILE_W / 2;
 		this.entity.transform.y = (gx + gy) * TILE_H / 2 - TILE_H / 4;
-		const image = this.entity.addComponent(RabImage);
+		const image = this.entity.addComponent(Sprite);
 		image.imageUrl = 'graphics/isometric/town.png';
 	}
 
@@ -90,8 +90,8 @@ class Town extends Component {
 class Unit extends Component {
 	gridX: number;
 	gridY: number;
-	image: RabImage;
-	banner: RabImage;
+	image: Sprite;
+	banner: Sprite;
 
 	init(gx, gy, banner) {
 		this.gridX = gx;
@@ -101,11 +101,11 @@ class Unit extends Component {
 		this.entity.transform.y = (gx + gy) * TILE_H / 2 - 32;
 
 		const imageEntity = new Entity();
-		this.image = imageEntity.addComponent(RabImage);
+		this.image = imageEntity.addComponent(Sprite);
 		this.image.imageUrl = 'graphics/isometric/warchap.png';
 
 		const bannerEntity = new Entity();
-		this.banner = bannerEntity.addComponent(RabImage);
+		this.banner = bannerEntity.addComponent(Sprite);
 		this.banner.imageUrl = 'graphics/isometric/' + banner + '.png';
 
 		const list = this.entity.addComponent(GraphicList);
@@ -116,7 +116,7 @@ class Unit extends Component {
 class City extends Component {
 	gridX: number;
 	gridY: number;
-	image: RabImage;
+	image: Sprite;
 	init(gx, gy) {
 		this.gridX = gx;
 		this.gridY = gy;
@@ -127,7 +127,7 @@ class City extends Component {
 		this.entity.transform.x = (gx - gy) * TILE_W / 2 - width / 2 + TILE_W / 2;
 		this.entity.transform.y = (gx + gy) * TILE_H / 2 - height + TILE_H * 2;
 
-		this.image = this.entity.addComponent(RabImage);
+		this.image = this.entity.addComponent(Sprite);
 		this.image.imageUrl = ('graphics/isometric/city.png');
 	}
 }
