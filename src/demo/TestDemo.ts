@@ -2,9 +2,8 @@ import * as rEngine from "../ts/Core";
 import { Entity, Rabbit, KeyType, Text, World, Component } from "../ts/Core";
 import Tween from "../ts/tweens/Tween";
 import { main as demo2 } from "./EffectButton";
-import { main as demo3 } from "./IsoGame";
-import { main as demo4 } from "./LightItUp";
-import { main as demo5 } from "./QuestGame";
+import { main as demo3 } from "./LightItUp";
+import { main as demo4 } from "./QuestGame";
 import SuperGame from "./SuperGame";
 /**
  * 引擎完整功能测试Demo
@@ -34,7 +33,6 @@ export class TestDemo {
         demos.push(this.demo1());
         demos.push(demo3());
         demos.push(demo4());
-        demos.push(demo5());
         this.demos = demos;
         for (let i = 0; i < demos.length; i++) {
             const world = demos[i];

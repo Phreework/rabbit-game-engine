@@ -328,6 +328,7 @@ export class Rabbit {
         img.src = url;
         img.onload = () => {
             (img as any).valid = true;
+            console.log("img success", img);
         }
         img.onerror = () => {
             (img as any).valid = false; Rabbit.Instance.imageError(img.src);
@@ -2174,19 +2175,7 @@ export class World extends RabObject {
         this.maxId = 0;
     }
 
-    /**
-     * 碰撞事件，无需手动调用
-     */
-    collide(rect: Rect) {
-        let collisions: Collision[] = [];
-        for (let i = 0; i < this.entities.length; i++) {
-            const entity = this.entities[i];
-            if (entity.graphic == null) continue;
-            const entRect = new Rect(entity.graphic.x, entity.graphic.y, entity.graphic.w, entity.graphic.h);
-            if (rect.collideRect(entRect)) collisions.push(new Collision(entity, entRect));
-        }
-        return collisions;
-    }
+
 }
 
 /**
@@ -2210,8 +2199,6 @@ export class Collision {
  */
 @rClass
 export class GraphicComponent extends Component {
-    x: number = 0;
-    y: number = 0;
     z: number = 0;
     w: number = 0;
     h: number = 0;
@@ -2369,8 +2356,6 @@ export class Text extends GraphicComponent {
 
     constructor(x?, y?, text?, font?, colour?, size?, align?) {
         super();
-        // this.x = x || 0;
-        // this.y = y || 0;
         this._text = text || "";
         this.font = font || "sans";
         this.colour = colour || "white";
@@ -2408,7 +2393,7 @@ export class Text extends GraphicComponent {
     updateScale() {
     }
     draw() {
-        if (!this.entity)return;
+        if (!this.entity) return;
         const ctx = Rabbit.Instance.context;
         const transform = this.entity.transform;
 
@@ -2451,14 +2436,6 @@ export class Text extends GraphicComponent {
             ctx.lineWidth = 2;
             ctx.strokeStyle = "red";
             ctx.strokeRect(rect.x - rect.width / 2, -rect.y - rect.height / 2, rect.width, rect.height);
-            // console.log("name: ",transform.entity.name);
-            // console.log("x: ",rect.x - rect.width / 2)
-            // console.log("y: ",-rect.y - rect.height / 2)
-            // console.log("w: ",rect.width)
-            // console.log("h: ",rect.height)
-            // console.log("w: ",this.w)
-            // console.log("h: ",this.h)
-            // console.log("size: ",this.textSize)
             ctx.restore();
         }
     }
@@ -2711,8 +2688,10 @@ export class GraphicList extends GraphicComponent {
     }
 
     draw() {
+        if (!this.entity) return;
+        const transform = this.entity.transform;
         Rabbit.Instance.context.save();
-        Rabbit.Instance.context.translate(this.x, this.y);
+        Rabbit.Instance.context.translate(transform.worldX, transform.worldY);
         for (let i = 0; i < this.graphics.length; ++i) {
             this.graphics[i].draw();
         }
@@ -2728,17 +2707,21 @@ export class GraphicList extends GraphicComponent {
     }
 
     move(dx, dy) {
-        this.x += dx;
-        this.y += dy;
+        if (!this.entity) return;
+        const transform = this.entity.transform;
+        transform.worldX += dx;
+        transform.worldY += dy;
         for (let i = 0; i < this.graphics.length; ++i) {
-            this.graphics[i].x += dx;
-            this.graphics[i].y += dy;
+            this.graphics[i].entity.transform.worldX += dx;
+            this.graphics[i].entity.transform.worldY += dy;
         }
     }
 
     place(pos) {
-        var dx = pos[0] - this.x;
-        var dy = pos[1] - this.y;
+        if (!this.entity) return;
+        const transform = this.entity.transform;
+        var dx = pos[0] - transform.worldX;
+        var dy = pos[1] - transform.worldY;
         this.move(dx, dy);
     }
 
@@ -2764,103 +2747,111 @@ export class GraphicList extends GraphicComponent {
     }
 }
 @rClass
-export class Sprite extends GraphicComponent {
-
-    _x: number;
-    _y: number;
-    alpha: number;
+export class RabResource extends RabObject {
+    url: string;
+}
+@rClass
+export class SpriteFrame extends RabResource {
     _imageUrl: string;
     get imageUrl() {
         return this._imageUrl;
     }
     set imageUrl(value: string) {
         this._imageUrl = value;
-        this._image = Rabbit.loadImage(value);
-        this.w = this._image.width;
-        this.h = this._image.height;
+        this.image = Rabbit.loadImage(value);
     }
-
     _image: HTMLImageElement;
-    set image(img:HTMLImageElement){
+    set image(img: HTMLImageElement) {
         this._image = img;
         this.updateSize();
     }
-    get image(){
+    get image() {
         return this._image;
     }
-    ignoreCamera: boolean = false;
-    constructor(x?: number, y?: number, image?: string) {
+    width: number;
+    height: number;
+    size: Vec2;
+    constructor(url?: string) {
         super();
-        this._x = x ? x : 0;
-        this._y = y ? y : 0;
-        this.x = x ? x : 0;
-        this.y = y ? y : 0;
-        this.alpha = 1;
-        if (image) this.image = Rabbit.loadImage(image);
+        if (url) this.imageUrl = url;
     }
 
     async setImageAsync(url: string) {
         this._imageUrl = url;
         this.image = await Rabbit.loadImageAsync(url);
     }
+    isValid(): boolean {
+        return (this.image as any).valid;
+    }
+    private updateSize() {
+        this.width = this.image.width;
+        this.height = this.image.height;
+        this.size = new Vec2(this.width, this.height);
+        // console.log("updateSizeImage", this.size);
+    }
+}
+@rClass
+export class Sprite extends GraphicComponent {
+
+    alpha: number;
+    _spriteFrame: SpriteFrame;
+    get width(): number {
+        return this.spriteFrame.width;
+    }
+    get height(): number {
+        return this.spriteFrame.height;
+    }
+    set spriteFrame(spr: SpriteFrame) {
+        this._spriteFrame = spr;
+        this.updateSize();
+    }
+    get spriteFrame() {
+        return this._spriteFrame;
+    }
+    ignoreCamera: boolean = false;
+    constructor(x?: number, y?: number, spriteframe?: SpriteFrame) {
+        super();
+        this.alpha = 1;
+        if (spriteframe) this.spriteFrame = spriteframe;
+    }
+
+
 
     draw() {
-        if (!this._image || !(this._image as any).valid) return;
-
-
+        if (!this.spriteFrame || !this.spriteFrame.isValid() || !this.entity) return;
         const ctx = Rabbit.Instance.context;
+        const transform = this.entity.transform;
+
         ctx.save();
         ctx.globalAlpha = this.alpha;
         if (this.ignoreCamera)
-        ctx.translate(Math.floor(this._x-this.w/2), -Math.floor(this._y+this.h/2));
+            ctx.translate(Math.floor(transform.worldX - this.width / 2), -Math.floor(transform.worldY + this.height / 2));
         else
-        ctx.translate(Math.floor(this._x -this.w/2 + Rabbit.Instance.camera.x), -Math.floor(this._y +this.h/2+ Rabbit.Instance.camera.y));
+            ctx.translate(Math.floor(transform.worldX - this.width / 2 + Rabbit.Instance.camera.x), -Math.floor(transform.worldY + this.height / 2 + Rabbit.Instance.camera.y));
 
         // Debug.log("camera",Rabbit.Instance.camera);
-        ctx.drawImage(this._image, 0, 0);
+        ctx.drawImage(this.spriteFrame.image, 0, 0);
         ctx.globalAlpha = 1;
         ctx.restore();
 
-        if (Rabbit.Instance.debugMode &&this.entity) {
+        if (Rabbit.Instance.debugMode && this.entity) {
             ctx.save();
             const rect = this.entity.transform.getRect();
             ctx.lineWidth = 2;
             ctx.strokeStyle = "red";
             ctx.strokeRect(rect.x - rect.width / 2, -rect.y - rect.height / 2, rect.width, rect.height);
-            // console.log("name: ",transform.entity.name);
-            // console.log("x: ",rect.x - rect.width / 2)
-            // console.log("y: ",-rect.y - rect.height / 2)
-            // console.log("w: ",rect.width)
-            // console.log("h: ",rect.height)
-            // console.log("w: ",this.w)
-            // console.log("h: ",this.h)
-            // console.log("size: ",this.textSize)
             ctx.restore();
         }
     }
 
     update(dtime) {
-        if (!this._image) return;
-        Rabbit.Instance.context.save();
-        if (this.ignoreCamera)
-            Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
-        else
-            Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
-        Rabbit.Instance.context.clearRect(0, 0, Math.round(this.w), Math.round(this.h));
-        Rabbit.Instance.context.restore();
-        this.x = this.entity.transform.worldX;
-        this.y = this.entity.transform.worldY;
-        this._x = this.x;
-        this._y = this.y;
+        if (!this.spriteFrame) return;
     }
-
-    updateSize(){
-        console.log("updateSize");
-        if (this.entity){
-            this.w = this.image.width;
-            this.h = this.image.height;
-            this.entity.transform.size = new Vec2(this.w,this.h);
-            Debug.log("size",this.entity.transform.size);
+    private updateSize() {
+        // Debug.log("updateSize");
+        if (this.entity) {
+            this.entity.transform.size = new Vec2(this.width, this.height);
+            // Debug.log("size", this.entity.transform.size);
         }
     }
 }
@@ -2909,8 +2900,6 @@ export class Canvas extends Component {
 }
 @rClass
 export class Animation extends GraphicComponent {
-    private _x: any;
-    private _y: any;
     origin: number[];
     scale: number;
     image: HTMLImageElement;
@@ -2929,10 +2918,6 @@ export class Animation extends GraphicComponent {
     loop: any;
     constructor(x, y, image, frameW, frameH) {
         super();
-        this._x = x;
-        this._y = y;
-        this.x = x;
-        this.y = y;
         this.origin = [0, 0];
         this.scale = 1;
         this.image = Rabbit.loadImage(image);
@@ -2955,7 +2940,8 @@ export class Animation extends GraphicComponent {
     }
 
     draw() {
-        if (!(this.image as any).valid) return;
+        if (!(this.image as any).valid || !this.entity) return;
+        const transform = this.entity.transform;
         var fx = 0;
         var fy = 0;
         var ox = 0;
@@ -2969,11 +2955,10 @@ export class Animation extends GraphicComponent {
         Rabbit.Instance.context.save();
         Rabbit.Instance.context.globalAlpha = this.alpha;
 
-        this._x = this.x; this._y = this.y;
         if (this.ignoreCamera)
-            Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
+            Rabbit.Instance.context.translate(Math.floor(transform.worldX), Math.floor(transform.worldY));
         else
-            Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
+            Rabbit.Instance.context.translate(Math.floor(transform.worldX + Rabbit.Instance.camera.x), Math.floor(transform.worldY + Rabbit.Instance.camera.y));
 
         var midPointX = this.w * 0.5;
         var midPointY = this.h * 0.5;
@@ -2992,8 +2977,10 @@ export class Animation extends GraphicComponent {
     }
 
     place(pos) {
-        this.x = pos[0];
-        this.y = pos[1];
+        if (!this.entity) return;
+        const transform = this.entity.transform;
+        transform.worldX = pos[0];
+        transform.worldY = pos[1];
     }
 
     play(animation, fps, loop) {
@@ -3007,15 +2994,15 @@ export class Animation extends GraphicComponent {
     }
 
     update(dtime) {
+        if (!this.entity) return;
+        const transform = this.entity.transform;
         Rabbit.Instance.context.save();
         if (this.ignoreCamera)
-            Rabbit.Instance.context.translate(Math.floor(this._x), Math.floor(this._y));
+            Rabbit.Instance.context.translate(Math.floor(transform.worldX), Math.floor(transform.worldY));
         else
-            Rabbit.Instance.context.translate(Math.floor(this._x + Rabbit.Instance.camera.x), Math.floor(this._y + Rabbit.Instance.camera.y));
+            Rabbit.Instance.context.translate(Math.floor(transform.worldX + Rabbit.Instance.camera.x), Math.floor(transform.worldY + Rabbit.Instance.camera.y));
         Rabbit.Instance.context.clearRect(0, 0, Math.floor(this.w), Math.floor(this.h));
         Rabbit.Instance.context.restore();
-        this._x = this.x;
-        this._y = this.y;
         this.w = this.frameWidth;
         this.h = this.frameHeight;
         this.time += dtime;
@@ -3031,152 +3018,6 @@ export class Animation extends GraphicComponent {
                     this.frame = this.animation.length - 1;
             }
         }
-    }
-}
-/**
- * 需要重构
- */
-@rClass
-export class Tilemap extends GraphicComponent {
-    gridW: number;
-    gridH: number;
-    tileW: number;
-    tileH: number;
-    image: HTMLImageElement;
-    canvas: SplashCanvas;
-    tiles: number[];
-    constructor(x, y, image, tw, th, gw, gh, tiles) {
-        super();
-        this.x = x;
-        this.y = y;
-        this.gridW = gw;
-        this.gridH = gh;
-        this.tileW = tw;
-        this.tileH = th;
-
-        this.image = Rabbit.loadImage(image);
-        this.canvas = null;
-        this.tiles = [];
-        for (let i = 0; i < gh; ++i) {
-            for (let j = 0; j < gw; ++j) {
-                this.tiles.push(0);
-            }
-        }
-    }
-
-
-    build() {
-        this.canvas = new SplashCanvas(this.x, this.y, this.tileW * this.gridW, this.tileH * this.gridH);
-
-        for (var y = 0; y < this.gridH; ++y) {
-            for (var x = 0; x < this.gridW; ++x) {
-                this.setTile(x, y, this.tile(x, y));
-            }
-        }
-    }
-
-    draw() {
-        if (this.canvas)
-            this.canvas.draw();
-    }
-
-    tile(tx, ty) {
-        if (tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
-            return undefined;
-        return this.tiles[ty * this.gridW + tx];
-    }
-
-    setTile(tx, ty, tile) {
-        if (tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
-            return;
-        this.tiles[ty * this.gridW + tx] = tile;
-
-        var sheetW = Math.floor(this.image.width / this.tileW);
-        var sheetH = Math.floor(this.image.height / this.tileH);
-        var col = (tile - 1) % (sheetW);
-        var row = Math.floor((tile - 1) / sheetW);
-
-        if (this.canvas) {
-            var sourceX = col * this.tileW;
-            var sourceY = row * this.tileH;
-
-            var destX = tx * this.tileW;
-            var destY = ty * this.tileH;
-
-            this.canvas.context.clearRect(destX, destY, this.tileW, this.tileH);
-            this.canvas.context.drawImage(this.image, sourceX, sourceY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH);
-        }
-    }
-
-    update(dtime) {
-        Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
-        if (!this.canvas && (this.image as any).valid) {
-            this.build();
-        }
-    }
-}
-
-/**
- * @class 渲染Canvas类
- * @deprecated
- */
-@rClass
-export class SplashCanvas extends GraphicComponent {
-
-    alpha: number;
-
-    canvas: HTMLCanvasElement;
-
-    context: CanvasRenderingContext2D;
-
-    ignoreCamera: boolean = false;
-
-    constructor(x?: number, y?: number, w?: number, h?: number) {
-        super();
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.alpha = 1;
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = w;
-        this.canvas.height = h;
-        this.context = this.canvas.getContext('2d');
-    }
-
-    draw() {
-        if (!this.entity)return;
-        const ctx = Rabbit.Instance.context;
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-
-        if (this.ignoreCamera)
-        ctx.translate(Math.floor(this.x), Math.floor(this.y));
-        else
-        ctx.translate(Math.floor(this.x + Rabbit.Instance.camera.x), Math.floor(this.y + Rabbit.Instance.camera.y));
-
-        ctx.drawImage(this.canvas, 0, 0);
-        ctx.restore();
-        if (Rabbit.Instance.debugMode && this.entity) {
-            ctx.save();
-            const rect = this.entity.transform.getRect();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "red";
-            ctx.strokeRect(rect.x - rect.width / 2, -rect.y - rect.height / 2, rect.width, rect.height);
-            // console.log("name: ",transform.entity.name);
-            // console.log("x: ",rect.x - rect.width / 2)
-            // console.log("y: ",-rect.y - rect.height / 2)
-            // console.log("w: ",rect.width)
-            // console.log("h: ",rect.height)
-            // console.log("w: ",this.w)
-            // console.log("h: ",this.h)
-            // console.log("size: ",this.textSize)
-            ctx.restore();
-        }
-    }
-
-    update(dtime) {
-        Rabbit.Instance.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1));
     }
 }
 

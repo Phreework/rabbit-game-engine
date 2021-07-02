@@ -1,4 +1,4 @@
-import { Entity, Circle, SplashCanvas, Sfx, Rabbit, World, Component, AudioSystem, EventType, RabbitMouseEvent, Vec2 } from "../ts/Core";
+import { Entity, Circle, Sfx, Rabbit, World, Component, AudioSystem, EventType, RabbitMouseEvent, Vec2, GraphicComponent, SpriteFrame, Sprite, rabbit } from "../ts/Core";
 class Light extends Component {
     gx: any;
     gy: any;
@@ -6,35 +6,28 @@ class Light extends Component {
     lit: boolean;
     board: any;
     circle: Circle;
-    dark: SplashCanvas;
-    light: SplashCanvas;
+    dark: SpriteFrame;
+    light: SpriteFrame;
+    spr:Sprite;
 
-    init(gx, gy, radius, board) {
+    init(gx, gy, board) {
         this.gx = gx;
         this.gy = gy;
-        let x = gx * (radius * 2 + 1);
-        let y = gy * (radius * 2 + 1);
-        this.entity.transform.setPosition(x + radius, y + radius);
+        this.dark = new SpriteFrame("graphics/dark.png");
+        this.light = new SpriteFrame("graphics/light.png");
+        const radius:number = this.dark.width/2;
+        let x = gx;
+        let y = gy;
+        console.log("radius",radius);
+        this.entity.transform.setPosition(radius + x * (radius * 2 + 1), -radius - (y * radius * 2 + 1));
         this.radius = radius;
         this.lit = true;
         this.board = board;
         this.circle = new Circle(x + radius, y + radius, radius);
-        this.dark = new SplashCanvas(x, y, radius * 2, radius * 2);
-        this.dark.context.beginPath();
-        this.dark.context.fillStyle = '#400';
-        this.dark.context.arc(radius, radius, this.radius, 0, 360);
-        this.dark.context.fill();
-        this.light = new SplashCanvas(x, y, radius * 2, radius * 2);
-        this.light.context.beginPath();
-        this.light.context.fillStyle = '#f00';
-        this.light.context.arc(radius, radius, this.radius, 0, 360);
-        this.light.context.fill();
-
-        this.entity.graphic = this.dark;
-        this.entity.transform.size = new Vec2(this.radius, this.radius);
+        this.spr = this.entity.addComponent(Sprite);
+        this.spr.spriteFrame = this.dark;
     }
     onLoad() {
-
         this.entity.listen(EventType.MOUSE_DOWN, (event: RabbitMouseEvent) => {
             this.board.light(this.gx, this.gy);
         }, this);
@@ -46,30 +39,26 @@ class Light extends Component {
 
     update(dtime) {
         if (this.lit) {
-            this.entity.graphic = this.light;
+            this.spr.spriteFrame = this.light;
         }
         else {
-            this.entity.graphic = this.dark;
+            this.spr.spriteFrame = this.dark;
         }
     }
 }
 
 class Board extends Component {
     lights: Light[];
-    onLoad() {
+    async onLoad() {
         console.log("board start");
         this.lights = [];
+        await Rabbit.loadImageAsync("graphics/dark.png")
+        await Rabbit.loadImageAsync("graphics/light.png")
         for (let y = 0; y < 5; ++y) {
             for (let x = 0; x < 5; ++x) {
                 const lightEntity = new Entity();
                 const light = lightEntity.addComponent(Light);
-                light.init(x, y, 32, this);
-                lightEntity.transform.x = 32 + x * (32 * 2 + 1);
-                lightEntity.transform.y = -32 - (y * 32 * 2 + 1);
-                light.dark.entity = lightEntity;
-                light.light.entity = lightEntity;
-                lightEntity.transform.width = 32;
-                lightEntity.transform.height = 32;
+                light.init(x, y, this);
                 this.lights.push(light);
                 Rabbit.Instance.world.add(lightEntity);
             }
