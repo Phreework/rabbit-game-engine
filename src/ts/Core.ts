@@ -1109,6 +1109,10 @@ export class TransformChangeSign {
 }
 @rClass
 export class Transform extends Component {
+    /**
+     * 设置该canvas为基准Canvas，canvas关联transform为最顶层transform，在html画布的中心位置
+     * @param canvas 
+     */
     _setRoot(canvas: Canvas) {
         this.width = canvas.resolution.width;
         this.height = canvas.resolution.height;
@@ -2406,7 +2410,6 @@ export class Text extends GraphicComponent {
 
         const selfAngle: number = transform.worldAngle * Math.PI / 180;
 
-
         ctx.translate(transform.worldX, -transform.worldY);
         ctx.rotate(selfAngle);
         ctx.scale(transform.scaleX, transform.scaleY);
@@ -2824,17 +2827,43 @@ export class Sprite extends GraphicComponent {
 
         ctx.save();
         ctx.globalAlpha = this.alpha;
+
+        const selfAngle: number = transform.worldAngle * Math.PI / 180;
+
         if (this.ignoreCamera)
             ctx.translate(Math.floor(transform.worldX - this.width / 2), -Math.floor(transform.worldY + this.height / 2));
         else
             ctx.translate(Math.floor(transform.worldX - this.width / 2 + Rabbit.Instance.camera.x), -Math.floor(transform.worldY + this.height / 2 + Rabbit.Instance.camera.y));
+        ctx.rotate(selfAngle);
+        ctx.scale(transform.scaleX, transform.scaleY);
+        if (this.ignoreCamera)
+            ctx.translate(-Math.floor(transform.worldX - this.width / 2), +Math.floor(transform.worldY + this.height / 2));
+        else
+            ctx.translate(-Math.floor(transform.worldX - this.width / 2 + Rabbit.Instance.camera.x), Math.floor(transform.worldY + this.height / 2 + Rabbit.Instance.camera.y));
 
         // Debug.log("camera",Rabbit.Instance.camera);
-        ctx.drawImage(this.spriteFrame.image, 0, 0);
+
+        if (transform.parent) {
+            const parentAngle = transform.parent.worldAngle * Math.PI / 180;
+            if (this.ignoreCamera)
+                ctx.translate(Math.floor(transform.parent.worldX - this.width / 2), -Math.floor(transform.parent.worldY + this.height / 2));
+            else
+                ctx.translate(Math.floor(transform.parent.worldX - this.width / 2 + Rabbit.Instance.camera.x), -Math.floor(transform.parent.worldY + this.height / 2 + Rabbit.Instance.camera.y));
+            ctx.scale(transform.worldScaleX, transform.worldScaleY);
+            ctx.rotate(parentAngle);
+            ctx.drawImage(this.spriteFrame.image, transform.x, -transform.y);
+        } else {
+            if (this.ignoreCamera)
+            ctx.translate(Math.floor(transform.worldX - this.width / 2), -Math.floor(transform.worldY + this.height / 2));
+        else
+            ctx.translate(Math.floor(transform.worldX - this.width / 2 + Rabbit.Instance.camera.x), -Math.floor(transform.worldY + this.height / 2 + Rabbit.Instance.camera.y));
+            ctx.scale(transform.worldScaleX, transform.worldScaleY);
+            ctx.drawImage(this.spriteFrame.image, 0, 0);
+        }
         ctx.globalAlpha = 1;
         ctx.restore();
 
-        if (Rabbit.Instance.debugMode && this.entity) {
+        if (Rabbit.Instance.debugMode) {
             ctx.save();
             const rect = this.entity.transform.getRect();
             ctx.lineWidth = 2;
