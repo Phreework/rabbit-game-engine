@@ -585,7 +585,6 @@ export let rabbit: Rabbit = null;
 @rClass
 export class EntitySystem {
 
-
     /**
      * @instance EntitySystem的唯一静态实例
      */
@@ -648,6 +647,7 @@ export class EntitySystem {
         e.parent = null;
         Rabbit.Instance.world.removes.push(e);
     }
+
 }
 
 /**

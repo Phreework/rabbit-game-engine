@@ -1,4 +1,4 @@
-import { Entity, EventDisPatcher, Sprite, SpriteFrame } from "../Core";
+import { Entity, EventDisPatcher, EventType, Rabbit, RabbitMouseEvent, Sprite, SpriteFrame } from "../Core";
 import { Debug } from "../Debug";
 import { rClass } from "../Decorator";
 import { UIComponent } from "./UIComponent";
@@ -55,9 +55,23 @@ export class Button extends UIComponent {
     events: IButtonEvent[];
     onLoad() {
         try {
-            if (this.entity)this.target = this.entity;
+            if (this.entity && !this.target) this.target = this.entity;
+            this.target.listen(EventType.MOUSE_DOWN, (event: RabbitMouseEvent) => {
+                const rect = this.target.transform.getRect();
+                if (rect.collidePoint([event.x, event.y])) {
+                    this.emitEvents();
+                }
+            })
         } catch (e) {
             Debug.error(e, "按钮可能没有实体");
         }
+    }
+    /**
+     * 触发按钮所有绑定事件
+     */
+    emitEvents() {
+        this.events.forEach((event) => {
+            event.target.getComponent(event.scriptName)[event.funcName](...event.params);
+        })
     }
 }
