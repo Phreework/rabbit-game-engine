@@ -1,5 +1,14 @@
-import { AudioSystem, Entity, EventType, Rabbit, RabbitMouseEvent, Sprite, Rect, Sfx, World, SpriteFrame,Text } from "../ts/Core";
+import { AudioSystem, Entity, EventType, Rabbit, RabbitMouseEvent, Sprite, Rect, Sfx, World, SpriteFrame,Text, Component } from "../ts/Core";
+import { Button, ButtonEvent } from "../ts/UI/Button";
 
+class EffectButton extends Component{
+    playMyFx(){
+            AudioSystem.play("audio/bell.ogg");
+            console.log("play");
+            this.entity.transform.x += 30;
+            this.entity.transform.angle+=15;
+    }
+}
 export function main(): World {
     const world = new World("demo2");
     world.init = async () => {
@@ -15,17 +24,11 @@ export function main(): World {
         const text = entity2.addComponent(Text);
         text.text = "lalala";
         text.setAlign(Text.TextAlignType.center);
-        entity.listen(EventType.MOUSE_DOWN, (event: RabbitMouseEvent) => {
-            const rect = entity.transform.getRect();
-            if (rect.collidePoint([event.x, event.y])) {
-                AudioSystem.play("audio/bell.ogg");
-                console.log("play");
-                entity.transform.x += 30;
-                entity.transform.angle+=15;
-                entity2.transform.angle+=15;
-            }
-        });
-        
+        console.log("transform",entity.getComponent("Transform"));
+        entity.addComponent(EffectButton);
+        const btn = entity.addComponent(Button);
+        const event = new ButtonEvent(entity,"EffectButton", "playMyFx");
+        btn.addEvent(event);
         world.add(entity);
         world.add(entity2);
     };

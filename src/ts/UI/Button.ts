@@ -20,6 +20,21 @@ enum ButtonTransMode {
     sprite = 2,
     scale = 3
 }
+
+@rClass
+export class ButtonEvent {
+    target: Entity;
+    scriptName: string;
+    funcName: string;
+    params: any[];
+    constructor(target:Entity,scriptName:string,funcName:string,params?:any[]){
+        this.target = target;
+        this.scriptName = scriptName;
+        this.funcName = funcName;
+        this.params = params;
+    }
+}
+
 /**
  * @class 按钮组件
  */
@@ -52,7 +67,7 @@ export class Button extends UIComponent {
     /**
      * 事件组  
      */
-    events: IButtonEvent[];
+    events: IButtonEvent[]=[];
     onLoad() {
         try {
             if (this.entity && !this.target) this.target = this.entity;
@@ -71,7 +86,22 @@ export class Button extends UIComponent {
      */
     emitEvents() {
         this.events.forEach((event) => {
+            Debug.log("触发成功",event,event.target.getComponent(event.scriptName));
             event.target.getComponent(event.scriptName)[event.funcName](...event.params);
         })
+    }
+    /**
+     * 添加事件
+     * @param event 事件
+     */
+    addEvent(event:IButtonEvent):void{
+        this.events.push(event);
+    }
+    /**
+     * 删除已添加的事件
+     * @param funcname 事件函数名
+     */
+    deleteEvent(funcname:string):void{
+        this.events.filter((event)=>{return event.funcName!=funcname});
     }
 }

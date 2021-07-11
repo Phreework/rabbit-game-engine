@@ -1860,6 +1860,7 @@ export class Entity extends RabObject {
         if (typeof type == "string") {
             for (let i = 0; i < this.components.length; i++) {
                 const com = this.components[i];
+                console.log("name",(com as any).__proto__.constructor.name)
                 if ((com as any).__proto__.constructor.name == type) {
                     return (com as T);
                 }

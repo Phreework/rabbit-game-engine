@@ -9,7 +9,7 @@ var cp = require('child_process');
 //创建服务
 var httpServer = http.createServer(processRequest);
 // 这是端口号
-var port = 80;
+var port = 8085;
 
 //指定一个监听的接口
 let flag:boolean = false;
